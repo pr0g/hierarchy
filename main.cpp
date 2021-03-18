@@ -1,4 +1,5 @@
 #include <ncurses.h>
+#include <string.h>
 
 int main(int argc, char** argv) {
   initscr(); // start curses mode
@@ -10,8 +11,19 @@ int main(int argc, char** argv) {
   int ch = getch();
   printw("The key pressed is: ");
   attron(A_BOLD);
-  printw("%c", ch);
+  printw("%c\n", ch);
   attroff(A_BOLD);
+
+  addch('t' | A_BOLD | A_UNDERLINE);
+  addch('\n');
+
+  const char* msg = "Hello, Tom!";
+  int row;
+  int col;
+  getmaxyx(stdscr, row, col);
+  mvprintw(row/2, (col - strlen(msg))/2, "%s", msg);
+  mvprintw(row-2,0,"This screen has %d rows and %d columns\n",row,col);
+  printw("Try resizing your window(if possible) and then run this program again");
 
   refresh();
   getch();
