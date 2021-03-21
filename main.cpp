@@ -3,7 +3,8 @@
 
 int main(int argc, char** argv) {
   initscr(); // start curses mode
-  raw(); // line buffering disabled
+  raw(); // line buffering disabled (ignores Ctrl-C or Ctrl-Z to quit)
+  // cbreak(); // line buffering disabled (respects Ctrl-C to quit)
   keypad(stdscr, true); // enable function keys
   noecho(); // don't echo while we do getch
 
