@@ -80,9 +80,10 @@ int main(int argc, char** argv) {
       int row;
       int col;
       getyx(stdscr, row, col);
-      mvprintw(row, col + curr_indent, "%s\n", e->name_.c_str());
+      mvprintw(row, col + curr_indent, "|--");
+      printw("%s\n", e->name_.c_str());
       if (!e->children_.empty()) {
-        indent_tracker.push(indent_tracker_t{curr_indent + 1, (int)e->children_.size()});
+        indent_tracker.push(indent_tracker_t{curr_indent + 3, (int)e->children_.size()});
       }
       for (auto rev_it = e->children_.rbegin(); rev_it != e->children_.rend(); ++rev_it) {
         entity_handle_stack.push(*rev_it);
