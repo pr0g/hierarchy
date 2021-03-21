@@ -28,6 +28,8 @@ int main(int argc, char** argv) {
   auto handle_e = entities.add("entity_e");
   auto handle_f = entities.add("entity_f");
   auto handle_g = entities.add("entity_g");
+  auto handle_h = entities.add("entity_h");
+  auto handle_i = entities.add("entity_i");
 
   auto* entity_a = entities.resolve(handle_a);
   entity_a->children_.push_back(handle_b);
@@ -41,7 +43,7 @@ int main(int argc, char** argv) {
   entity_c->children_.push_back(handle_f);
   entity_c->children_.push_back(handle_g);
 
-  auto display = [&entities](const thh::handle_t& root_handle) {
+  auto display = [&entities](const std::vector<thh::handle_t>& root_handles) {
     initscr(); // start curses mode
     cbreak(); // line buffering disabled (respects Ctrl-C to quit)
     keypad(stdscr, true); // enable function keys
@@ -49,7 +51,10 @@ int main(int argc, char** argv) {
     curs_set(0); // hide cursor
 
     std::stack<thh::handle_t> entity_handle_stack;
-    entity_handle_stack.push(root_handle);
+    // for (const auto handle : root_handles) {
+    for (auto rev_it = root_handles.rbegin(); rev_it != root_handles.rend(); ++rev_it) {
+      entity_handle_stack.push(*rev_it);
+    }
 
     struct indent_tracker_t {
       int indent_ = 0;
@@ -57,7 +62,9 @@ int main(int argc, char** argv) {
     };
 
     std::stack<indent_tracker_t> indent_tracker;
-    indent_tracker.push({0, 1});
+    for (int i = 0; i < root_handles.size(); ++i) {
+      indent_tracker.push(indent_tracker_t{0, 1});
+    }
 
     while (!entity_handle_stack.empty()) {
       auto& idt = indent_tracker.top();
@@ -87,7 +94,7 @@ int main(int argc, char** argv) {
     endwin();
   };
 
-   display(handle_a);
+   display({handle_a, handle_h, handle_i});
 
   return 0;
 }
