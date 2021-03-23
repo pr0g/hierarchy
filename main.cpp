@@ -5,20 +5,22 @@
 ///
 #include "thh_handles/thh_handles.hpp"
 
+#include <stack>
 #include <string>
 #include <utility>
-#include <stack>
 
-struct entity_t {
+struct entity_t
+{
   entity_t() = default;
-  explicit entity_t(std::string  name) : name_(std::move(name)) {}
+  explicit entity_t(std::string name) : name_(std::move(name)) {}
   std::string name_;
   std::vector<thh::handle_t> children_;
 };
 
 ///
 
-int main(int argc, char** argv) {
+int main(int argc, char** argv)
+{
   thh::container_t<entity_t> entities;
 
   auto handle_a = entities.add("entity_a");
@@ -30,6 +32,8 @@ int main(int argc, char** argv) {
   auto handle_g = entities.add("entity_g");
   auto handle_h = entities.add("entity_h");
   auto handle_i = entities.add("entity_i");
+  auto handle_j = entities.add("entity_j");
+  auto handle_k = entities.add("entity_k");
 
   auto* entity_a = entities.resolve(handle_a);
   entity_a->children_.push_back(handle_b);
@@ -43,6 +47,10 @@ int main(int argc, char** argv) {
   entity_c->children_.push_back(handle_f);
   entity_c->children_.push_back(handle_g);
 
+  auto* entity_i = entities.resolve(handle_i);
+  entity_i->children_.push_back(handle_j);
+  entity_i->children_.push_back(handle_k);
+
   auto display = [&entities](const std::vector<thh::handle_t>& root_handles) {
     initscr(); // start curses mode
     cbreak(); // line buffering disabled (respects Ctrl-C to quit)
@@ -50,56 +58,71 @@ int main(int argc, char** argv) {
     noecho(); // don't echo while we do getch
     curs_set(0); // hide cursor
 
-    std::stack<thh::handle_t> entity_handle_stack;
+    std::deque<thh::handle_t> entity_handle_stack;
     // for (const auto handle : root_handles) {
-    for (auto rev_it = root_handles.rbegin(); rev_it != root_handles.rend(); ++rev_it) {
-      entity_handle_stack.push(*rev_it);
+    for (auto rev_it = root_handles.rbegin(); rev_it != root_handles.rend();
+         ++rev_it) {
+      entity_handle_stack.push_front(*rev_it);
     }
 
-    struct indent_tracker_t {
+    struct indent_tracker_t
+    {
       int indent_ = 0;
       int count_ = 0;
     };
 
-    std::stack<indent_tracker_t> indent_tracker;
-    for (int i = 0; i < root_handles.size(); ++i) {
-      indent_tracker.push(indent_tracker_t{0, 1});
-    }
+    std::deque<indent_tracker_t> indent_tracker;
+    //    for (int i = 0; i < root_handles.size(); ++i) {
+    indent_tracker.push_front(indent_tracker_t{0, 3});
+    //    }
 
     while (!entity_handle_stack.empty()) {
-      auto& idt = indent_tracker.top();
-      auto curr_indent = idt.indent_;
-      idt.count_--;
-      if (idt.count_ == 0) {
-        indent_tracker.pop();
-      }
-
-      auto top = entity_handle_stack.top();
-      entity_handle_stack.pop();
+      auto indenter = indent_tracker.front();
+      auto curr_indent = indenter.indent_;
+      //      {
+      auto& indenter_ref = indent_tracker.front();
+      indenter_ref.count_--;
+      //      }
+      auto top = entity_handle_stack.front();
+      entity_handle_stack.pop_front();
       const auto* e = entities.resolve(top);
       int row;
       int col;
       getyx(stdscr, row, col);
+      //      int line_indent = curr_indent - 3;
+      for (const auto ind : indent_tracker) {
+        if (ind.count_ != 0 && ind.indent_ != curr_indent) {
+          int i;
+          i = 0;
+          //         mvprintw(row, col + line_indent, "|");
+          mvprintw(row, ind.indent_, "|");
+        }
+        //        line_indent -= 3;
+        // parent--;
+      }
+      if (indenter_ref.count_ == 0) {
+        indent_tracker.pop_front();
+      }
       mvprintw(row, col + curr_indent, "|--");
       printw("%s\n", e->name_.c_str());
       if (!e->children_.empty()) {
-        indent_tracker.push(indent_tracker_t{curr_indent + 3, (int)e->children_.size()});
+        indent_tracker.push_front(
+          indent_tracker_t{curr_indent + 3, (int)e->children_.size()});
       }
-      for (auto rev_it = e->children_.rbegin(); rev_it != e->children_.rend(); ++rev_it) {
-        entity_handle_stack.push(*rev_it);
+      for (auto rev_it = e->children_.rbegin(); rev_it != e->children_.rend();
+           ++rev_it) {
+        entity_handle_stack.push_front(*rev_it);
       }
     }
-
     refresh();
     getch();
     endwin();
   };
 
-   display({handle_a, handle_h, handle_i});
+  display({handle_a, handle_h, handle_i});
 
   return 0;
 }
-
 
 /*
   initscr(); // start curses mode
@@ -126,7 +149,8 @@ int main(int argc, char** argv) {
   getmaxyx(stdscr, row, col);
   mvprintw(row/2, (col - strlen(msg))/2, "%s", msg);
   mvprintw(row-2,0,"This screen has %d rows and %d columns\n",row,col);
-  printw("Try resizing your window(if possible) and then run this program again");
+  printw("Try resizing your window(if possible) and then run this program
+  again");
 
   refresh();
   getch();
