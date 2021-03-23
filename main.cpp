@@ -2,7 +2,6 @@
 #include <panel.h>
 #include <string.h>
 
-///
 #include "thh_handles/thh_handles.hpp"
 
 #include <stack>
@@ -16,8 +15,6 @@ struct entity_t
   std::string name_;
   std::vector<thh::handle_t> children_;
 };
-
-///
 
 int main(int argc, char** argv)
 {
@@ -39,9 +36,12 @@ int main(int argc, char** argv)
   entity_a->children_.push_back(handle_b);
   entity_a->children_.push_back(handle_c);
 
-  auto* entity_b = entities.resolve(handle_b);
-  entity_b->children_.push_back(handle_d);
-  entity_b->children_.push_back(handle_e);
+  auto* entity_g = entities.resolve(handle_g);
+  entity_g->children_.push_back(handle_k);
+
+  auto* entity_h = entities.resolve(handle_h);
+  entity_h->children_.push_back(handle_d);
+  entity_h->children_.push_back(handle_e);
 
   auto* entity_c = entities.resolve(handle_c);
   entity_c->children_.push_back(handle_f);
@@ -49,20 +49,17 @@ int main(int argc, char** argv)
 
   auto* entity_i = entities.resolve(handle_i);
   entity_i->children_.push_back(handle_j);
-  entity_i->children_.push_back(handle_k);
+
+  initscr(); // start curses mode
+  cbreak(); // line buffering disabled (respects Ctrl-C to quit)
+  keypad(stdscr, true); // enable function keys
+  noecho(); // don't echo while we do getch
+  curs_set(0); // hide cursor
 
   auto display = [&entities](const std::vector<thh::handle_t>& root_handles) {
-    initscr(); // start curses mode
-    cbreak(); // line buffering disabled (respects Ctrl-C to quit)
-    keypad(stdscr, true); // enable function keys
-    noecho(); // don't echo while we do getch
-    curs_set(0); // hide cursor
-
     std::deque<thh::handle_t> entity_handle_stack;
-    // for (const auto handle : root_handles) {
-    for (auto rev_it = root_handles.rbegin(); rev_it != root_handles.rend();
-         ++rev_it) {
-      entity_handle_stack.push_front(*rev_it);
+    for (auto it = root_handles.rbegin(); it != root_handles.rend(); ++it) {
+      entity_handle_stack.push_front(*it);
     }
 
     struct indent_tracker_t
@@ -71,55 +68,59 @@ int main(int argc, char** argv)
       int count_ = 0;
     };
 
+    const int indent_size = 3;
     std::deque<indent_tracker_t> indent_tracker;
-    //    for (int i = 0; i < root_handles.size(); ++i) {
-    indent_tracker.push_front(indent_tracker_t{0, 3});
-    //    }
+    indent_tracker.push_front(indent_tracker_t{0, indent_size});
 
-    while (!entity_handle_stack.empty()) {
-      auto indenter = indent_tracker.front();
-      auto curr_indent = indenter.indent_;
-      //      {
-      auto& indenter_ref = indent_tracker.front();
-      indenter_ref.count_--;
-      //      }
-      auto top = entity_handle_stack.front();
-      entity_handle_stack.pop_front();
-      const auto* e = entities.resolve(top);
+    const auto get_row_col = [] {
       int row;
       int col;
       getyx(stdscr, row, col);
-      //      int line_indent = curr_indent - 3;
+      return std::pair(row, col);
+    };
+
+    while (!entity_handle_stack.empty()) {
+      const auto curr_indent = indent_tracker.front().indent_;
+
+      {
+        auto& indenter_ref = indent_tracker.front();
+        indenter_ref.count_--;
+        if (indenter_ref.count_ == 0) {
+          indent_tracker.pop_front();
+        }
+      }
+
+      auto entity_handle = entity_handle_stack.front();
+      entity_handle_stack.pop_front();
+
+      auto [row, col] = get_row_col();
       for (const auto ind : indent_tracker) {
         if (ind.count_ != 0 && ind.indent_ != curr_indent) {
-          int i;
-          i = 0;
-          //         mvprintw(row, col + line_indent, "|");
           mvprintw(row, ind.indent_, "|");
         }
-        //        line_indent -= 3;
-        // parent--;
       }
-      if (indenter_ref.count_ == 0) {
-        indent_tracker.pop_front();
-      }
-      mvprintw(row, col + curr_indent, "|--");
-      printw("%s\n", e->name_.c_str());
-      if (!e->children_.empty()) {
+
+      const auto* entity = entities.resolve(entity_handle);
+
+      mvprintw(row, col + curr_indent, "|-- ");
+      printw("%s\n", entity->name_.c_str());
+
+      const auto& children = entity->children_;
+      if (!children.empty()) {
         indent_tracker.push_front(
-          indent_tracker_t{curr_indent + 3, (int)e->children_.size()});
+          indent_tracker_t{curr_indent + indent_size, (int)children.size()});
       }
-      for (auto rev_it = e->children_.rbegin(); rev_it != e->children_.rend();
-           ++rev_it) {
-        entity_handle_stack.push_front(*rev_it);
+      for (auto it = children.rbegin(); it != children.rend(); ++it) {
+        entity_handle_stack.push_front(*it);
       }
     }
-    refresh();
-    getch();
-    endwin();
   };
 
   display({handle_a, handle_h, handle_i});
+
+  refresh();
+  getch();
+  endwin();
 
   return 0;
 }
