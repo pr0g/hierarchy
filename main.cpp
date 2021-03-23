@@ -68,24 +68,25 @@ int main(int argc, char** argv)
       int count_ = 0;
     };
 
-    const int indent_size = 3;
     std::deque<indent_tracker_t> indent_tracker;
-    indent_tracker.push_front(indent_tracker_t{0, indent_size});
+    indent_tracker.push_front(
+      indent_tracker_t{0, (int)entity_handle_stack.size()});
 
     const auto get_row_col = [] {
-      int row;
-      int col;
+      int row = 0;
+      int col = 0;
       getyx(stdscr, row, col);
       return std::pair(row, col);
     };
 
+    const int indent_size = 4;
     while (!entity_handle_stack.empty()) {
       const auto curr_indent = indent_tracker.front().indent_;
 
       {
-        auto& indenter_ref = indent_tracker.front();
-        indenter_ref.count_--;
-        if (indenter_ref.count_ == 0) {
+        auto& indent_ref = indent_tracker.front();
+        indent_ref.count_--;
+        if (indent_ref.count_ == 0) {
           indent_tracker.pop_front();
         }
       }
@@ -124,36 +125,3 @@ int main(int argc, char** argv)
 
   return 0;
 }
-
-/*
-  initscr(); // start curses mode
-  raw(); // line buffering disabled (ignores Ctrl-C or Ctrl-Z to quit)
-  // cbreak(); // line buffering disabled (respects Ctrl-C to quit)
-  keypad(stdscr, true); // enable function keys
-  noecho(); // don't echo while we do getch
-  // nodelay(stdscr, true);
-  // halfdelay(10);
-
-  printw("Type a character to see it in bold\n");
-  int ch = getch();
-  printw("The key pressed is: ");
-  attron(A_BOLD);
-  printw("%c\n", ch);
-  attroff(A_BOLD);
-
-  addch('t' | A_BOLD | A_UNDERLINE);
-  addch('\n');
-
-  const char* msg = "Hello, Tom!";
-  int row;
-  int col;
-  getmaxyx(stdscr, row, col);
-  mvprintw(row/2, (col - strlen(msg))/2, "%s", msg);
-  mvprintw(row-2,0,"This screen has %d rows and %d columns\n",row,col);
-  printw("Try resizing your window(if possible) and then run this program
-  again");
-
-  refresh();
-  getch();
-  endwin();
-*/
