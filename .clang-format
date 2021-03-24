@@ -9,12 +9,12 @@ AllowAllArgumentsOnNextLine: true
 BreakBeforeBraces: Custom
 BraceWrapping:
     AfterNamespace: true
-    AfterStruct: true
-    AfterClass: true
-    AfterEnum: true
-    AfterFunction: true
-    SplitEmptyFunction: true
-    SplitEmptyRecord: true
+    AfterStruct: false
+    AfterClass: false
+    AfterEnum: false
+    AfterFunction: false
+    SplitEmptyFunction: false
+    SplitEmptyRecord: false
 ColumnLimit: 80
 IndentWidth: 2
 ContinuationIndentWidth: 2
