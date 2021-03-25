@@ -8,15 +8,6 @@
 #include <string>
 #include <utility>
 
-namespace thh
-{
-  template<typename Tag>
-  bool operator==(
-    const typed_handle_t<Tag>& lhs, const typed_handle_t<Tag>& rhs) {
-    return lhs.gen_ == rhs.gen_ && lhs.id_ == rhs.id_;
-  }
-} // namespace thh
-
 struct entity_t {
   entity_t() = default;
   explicit entity_t(std::string name) : name_(std::move(name)) {}
