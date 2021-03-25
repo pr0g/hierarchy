@@ -8,7 +8,7 @@ AlwaysBreakTemplateDeclarations: Yes
 AllowAllArgumentsOnNextLine: true
 BreakBeforeBraces: Custom
 BraceWrapping:
-    AfterNamespace: true
+    AfterNamespace: false
     AfterStruct: false
     AfterClass: false
     AfterEnum: false

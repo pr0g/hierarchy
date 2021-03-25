@@ -10,5 +10,5 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(thh_handles)
 
 add_executable(${PROJECT_NAME})
-target_sources(${PROJECT_NAME} PRIVATE main.cpp)
+target_sources(${PROJECT_NAME} PRIVATE main.cpp entity.cpp)
 target_link_libraries(${PROJECT_NAME} PRIVATE Curses Panel thh_handles)
