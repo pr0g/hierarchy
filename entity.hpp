@@ -26,6 +26,15 @@ namespace hy {
           != collapsed_.end();
     }
   };
+
+  bool try_move_right(
+    interaction_t& interaction, thh::container_t<hy::entity_t>& entities);
+  bool try_move_left(
+    interaction_t& interaction, thh::container_t<hy::entity_t>& entities,
+    const std::vector<thh::handle_t>& root_handles);
+  void move_up(interaction_t& interaction);
+  void move_down(interaction_t& interaction);
+  void toggle_collapsed(interaction_t& interaction);
 } // namespace hy
 
 namespace demo {

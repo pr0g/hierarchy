@@ -1,5 +1,69 @@
 #include "entity.hpp"
 
+namespace hy {
+  bool try_move_right(
+    interaction_t& interaction, thh::container_t<hy::entity_t>& entities) {
+    if (!interaction.is_collapsed(interaction.selected_)) {
+      if (hy::entity_t* entity = entities.resolve(interaction.selected_)) {
+        if (!entity->children_.empty()) {
+          interaction.selected_ = entity->children_.front();
+          interaction.neighbors_ = entity->children_;
+          interaction.element_ = 0;
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  bool try_move_left(
+    interaction_t& interaction, thh::container_t<hy::entity_t>& entities,
+    const std::vector<thh::handle_t>& root_handles) {
+    if (hy::entity_t* entity = entities.resolve(interaction.selected_)) {
+      if (hy::entity_t* parent = entities.resolve(entity->parent_)) {
+        interaction.selected_ = entity->parent_;
+        if (hy::entity_t* grandparent = entities.resolve(parent->parent_)) {
+          interaction.neighbors_ = grandparent->children_;
+        } else {
+          interaction.neighbors_ = root_handles;
+        }
+        interaction.element_ =
+          std::find(
+            interaction.neighbors_.begin(), interaction.neighbors_.end(),
+            interaction.selected_)
+          - interaction.neighbors_.begin();
+        return true;
+      }
+    }
+    return false;
+  }
+
+  void move_up(interaction_t& interaction) {
+    interaction.element_ =
+      (interaction.element_ + interaction.neighbors_.size() - 1)
+      % interaction.neighbors_.size();
+    interaction.selected_ = interaction.neighbors_[interaction.element_];
+  }
+
+  void move_down(interaction_t& interaction) {
+    interaction.element_ =
+      (interaction.element_ + 1) % interaction.neighbors_.size();
+    interaction.selected_ = interaction.neighbors_[interaction.element_];
+  }
+
+  void toggle_collapsed(interaction_t& interaction) {
+    if (interaction.is_collapsed(interaction.selected_)) {
+      interaction.collapsed_.erase(
+        std::remove(
+          interaction.collapsed_.begin(), interaction.collapsed_.end(),
+          interaction.selected_),
+        interaction.collapsed_.end());
+    } else {
+      interaction.collapsed_.push_back(interaction.selected_);
+    }
+  }
+} // namespace hy
+
 namespace demo {
   std::vector<thh::handle_t> create_sample_entities(
     thh::container_t<hy::entity_t>& entities) {

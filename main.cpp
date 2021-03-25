@@ -108,59 +108,24 @@ int main(int argc, char** argv) {
     display(root_handles);
     refresh();
     move(0, 0);
-    int key = getch();
-    if (key == KEY_RIGHT) {
-      if (!interaction.is_collapsed(interaction.selected_)) {
-        if (hy::entity_t* entity = entities.resolve(interaction.selected_)) {
-          if (!entity->children_.empty()) {
-            interaction.selected_ = entity->children_.front();
-            interaction.neighbors_ = entity->children_;
-            interaction.element_ = 0;
-            continue;
-          }
-        }
-      }
-    }
-    if (key == KEY_LEFT) {
-      if (hy::entity_t* entity = entities.resolve(interaction.selected_)) {
-        if (hy::entity_t* parent = entities.resolve(entity->parent_)) {
-          interaction.selected_ = entity->parent_;
-          if (hy::entity_t* grandparent = entities.resolve(parent->parent_)) {
-            interaction.neighbors_ = grandparent->children_;
-          } else {
-            interaction.neighbors_ = root_handles;
-          }
-          interaction.element_ =
-            std::find(
-              interaction.neighbors_.begin(), interaction.neighbors_.end(),
-              interaction.selected_)
-            - interaction.neighbors_.begin();
-          continue;
-        }
-      }
-    }
-    if (key == KEY_DOWN) {
-      interaction.element_ =
-        (interaction.element_ + 1) % interaction.neighbors_.size();
-      interaction.selected_ = interaction.neighbors_[interaction.element_];
-    }
-    if (key == KEY_UP) {
-      interaction.element_ =
-        (interaction.element_ + interaction.neighbors_.size() - 1)
-        % interaction.neighbors_.size();
-      interaction.selected_ = interaction.neighbors_[interaction.element_];
-    }
-    if (key == ' ') {
-      if (interaction.is_collapsed(interaction.selected_)) {
-        interaction.collapsed_.erase(
-          std::remove(
-            interaction.collapsed_.begin(), interaction.collapsed_.end(),
-            interaction.selected_),
-          interaction.collapsed_.end());
-      } else {
-        interaction.collapsed_.push_back(interaction.selected_);
-      }
-      continue;
+    switch (int key = getch(); key) {
+      case KEY_RIGHT:
+        hy::try_move_right(interaction, entities);
+        break;
+      case KEY_LEFT:
+        hy::try_move_left(interaction, entities, root_handles);
+        break;
+      case KEY_DOWN:
+        hy::move_down(interaction);
+        break;
+      case KEY_UP:
+        hy::move_up(interaction);
+        break;
+      case ' ':
+        hy::toggle_collapsed(interaction);
+        break;
+      default:
+        break;
     }
   }
 
