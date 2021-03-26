@@ -1,5 +1,7 @@
 #include "entity.hpp"
 
+#include <deque>
+
 namespace hy {
   bool try_move_right(
     interaction_t& interaction, thh::container_t<hy::entity_t>& entities) {
@@ -60,6 +62,67 @@ namespace hy {
         interaction.collapsed_.end());
     } else {
       interaction.collapsed_.push_back(interaction.selected_);
+    }
+  }
+
+  void display_hierarchy(
+    const thh::container_t<hy::entity_t>& entities,
+    const interaction_t& interaction,
+    const std::vector<thh::handle_t>& root_handles,
+    const display_name_fn& display_name,
+    const display_connection_fn& display_connection,
+    const get_row_col_fn& get_row_col) {
+    std::deque<thh::handle_t> entity_handle_stack;
+    for (auto it = root_handles.rbegin(); it != root_handles.rend(); ++it) {
+      entity_handle_stack.push_front(*it);
+    }
+
+    struct indent_tracker_t {
+      int indent_ = 0;
+      int count_ = 0;
+    };
+
+    std::deque<indent_tracker_t> indent_tracker;
+    indent_tracker.push_front(
+      indent_tracker_t{0, (int)entity_handle_stack.size()});
+
+    const int indent_size = 4;
+    while (!entity_handle_stack.empty()) {
+      const auto curr_indent = indent_tracker.front().indent_;
+
+      {
+        auto& indent_ref = indent_tracker.front();
+        indent_ref.count_--;
+        if (indent_ref.count_ == 0) {
+          indent_tracker.pop_front();
+        }
+      }
+
+      auto entity_handle = entity_handle_stack.front();
+      entity_handle_stack.pop_front();
+
+      auto [row, col] = get_row_col();
+      for (const auto ind : indent_tracker) {
+        if (ind.count_ != 0 && ind.indent_ != curr_indent) {
+          display_connection(row, ind.indent_);
+        }
+      }
+
+      const auto* entity = entities.resolve(entity_handle);
+      const auto selected = interaction.selected_ == entity_handle;
+      display_name(
+        row, col + curr_indent, selected,
+        interaction.is_collapsed(entity_handle) && !entity->children_.empty(),
+        entity->name_);
+
+      const auto& children = entity->children_;
+      if (!children.empty() && !interaction.is_collapsed(entity_handle)) {
+        indent_tracker.push_front(
+          indent_tracker_t{curr_indent + indent_size, (int)children.size()});
+        for (auto it = children.rbegin(); it != children.rend(); ++it) {
+          entity_handle_stack.push_front(*it);
+        }
+      }
     }
   }
 } // namespace hy
