@@ -49,7 +49,7 @@ int main(int argc, char** argv) {
   for (bool running = true; running;) {
     clear();
     hy::display_hierarchy(
-      entities, interation, root_handles, display_name, display_connection,
+      entities, interaction, root_handles, display_name, display_connection,
       get_row_col);
     refresh();
     move(0, 0);
