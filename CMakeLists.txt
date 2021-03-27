@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(ncurses-experiment)
+project(hierarchy)
 
 include(FetchContent)
 FetchContent_Declare(
