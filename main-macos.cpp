@@ -71,6 +71,16 @@ int main(int argc, char** argv) {
       case ' ':
         hy::toggle_collapsed(interaction);
         break;
+      case 10: { // enter
+        auto next_handle = entities.add();
+        entities.call(next_handle, [next_handle](auto& entity) {
+          entity.name_ =
+            std::string("entity_") + std::to_string(next_handle.id_);
+        });
+        hy::add_children(
+          interaction.neighbors_[interaction.element_], {next_handle},
+          entities);
+      } break;
       default:
         break;
     }

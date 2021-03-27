@@ -137,24 +137,21 @@ namespace hy {
 namespace demo {
   std::vector<thh::handle_t> create_sample_entities(
     thh::container_t<hy::entity_t>& entities) {
-    auto handle_a = entities.add("entity_a");
-    auto handle_b = entities.add("entity_b");
-    auto handle_c = entities.add("entity_c");
-    auto handle_d = entities.add("entity_d");
-    auto handle_e = entities.add("entity_e");
-    auto handle_f = entities.add("entity_f");
-    auto handle_g = entities.add("entity_g");
-    auto handle_h = entities.add("entity_h");
-    auto handle_i = entities.add("entity_i");
-    auto handle_j = entities.add("entity_j");
-    auto handle_k = entities.add("entity_k");
+    using namespace std::string_literals;
+    const int64_t handle_count = 11;
+    std::vector<thh::handle_t> handles;
+    handles.reserve(handle_count);
+    for (int64_t i = 0; i < handle_count; i++) {
+      auto handle = entities.add("entity_"s + std::to_string(i));
+      handles.push_back(handle);
+    }
 
-    hy::add_children(handle_a, {handle_b, handle_c}, entities);
-    hy::add_children(handle_g, {handle_k}, entities);
-    hy::add_children(handle_h, {handle_d, handle_e}, entities);
-    hy::add_children(handle_c, {handle_f, handle_g}, entities);
-    hy::add_children(handle_i, {handle_j}, entities);
+    hy::add_children(handles[0], {handles[1], handles[2]}, entities);
+    hy::add_children(handles[6], {handles[10]}, entities);
+    hy::add_children(handles[7], {handles[3], handles[4]}, entities);
+    hy::add_children(handles[2], {handles[5], handles[6]}, entities);
+    hy::add_children(handles[8], {handles[9]}, entities);
 
-    return {handle_a, handle_h, handle_i};
+    return {handles[0], handles[7],handles[8]};
   }
 } // namespace demo
