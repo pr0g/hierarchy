@@ -1,9 +1,10 @@
 #include "entity.hpp"
 
-#include <stdlib.h>
-#include <cstdio>
-#include <windows.h>
 #include <conio.h>
+#include <cstdio>
+#include <stdlib.h>
+#include <windows.h>
+#include <optional>
 
 #define ESC "\x1b"
 #define CSI "\x1b["
@@ -81,9 +82,7 @@ int main(int argc, char** argv) {
     printf("|");
   };
 
-  const auto get_row_col = [&g_row, &g_col] {
-    return std::pair(g_row, g_col);
-  };
+  const auto get_row_col = [&g_row, &g_col] { return std::pair(g_row, g_col); };
 
   printf(CSI "?25l"); // hide cursor
   for (bool running = true; running;) {
@@ -96,36 +95,37 @@ int main(int argc, char** argv) {
       entities, interaction, root_handles, display_name, display_connection,
       get_row_col);
 
-    switch (int key = _getch(); key) {
-      case 3:
-        running = false;
-        break;
-      case 224:
-      case 0:
-        switch (int inner_key = _getch(); inner_key) {
-          case 75:
-            hy::try_move_left(interaction, entities, root_handles);
-            break;
-          case 72:
-            hy::move_up(interaction);
-            break;
-          case 77:
-            if (hy::try_move_right(interaction, entities)) {
-              break;
-            }
-            [[fallthrough]];
-          case 80:
-            hy::move_down(interaction);
-            break;
-          default:
-            break;
-        }
-      break;
-      case ' ': // space
-        hy::toggle_collapsed(interaction);
-        break;
-      default:
-        break;
+    std::optional<demo::input_e> input =
+      [&running]() -> std::optional<demo::input_e> {
+      switch (int key = _getch(); key) {
+        case 3:
+          running = false;
+          return std::nullopt;
+        case 224:
+        case 0:
+          switch (int inner_key = _getch(); inner_key) {
+            case 75:
+              return demo::input_e::move_left;
+            case 72:
+              return demo::input_e::move_up;
+            case 77:
+              return demo::input_e::move_right;
+            case 80:
+              return demo::input_e::move_down;
+            default:
+              return std::nullopt;
+          }
+          break;
+        case ' ': // space
+          return demo::input_e::show_hide;
+        case 13: // enter
+          return demo::input_e::add_child;
+        default:
+          return std::nullopt;
+      }
+    }();
+    if (input.has_value()) {
+      demo::process_input(input.value(), entities, root_handles, interaction);
     }
   }
 
