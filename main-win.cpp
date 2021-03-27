@@ -110,8 +110,10 @@ int main(int argc, char** argv) {
             hy::move_up(interaction);
             break;
           case 77:
-            hy::try_move_right(interaction, entities);
-            break;
+            if (hy::try_move_right(interaction, entities)) {
+              break;
+            }
+            [[fallthrough]];
           case 80:
             hy::move_down(interaction);
             break;
@@ -127,6 +129,7 @@ int main(int argc, char** argv) {
     }
   }
 
+  printf(CSI "?25h"); // show cursor
   SetConsoleMode(hOut, dwOriginalOutMode);
   SetConsoleMode(hIn, dwOriginalInMode);
 
