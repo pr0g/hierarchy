@@ -39,7 +39,7 @@ namespace hy {
     thh::handle_t selected_;
     std::vector<thh::handle_t> collapsed_;
 
-    bool is_collapsed(thh::handle_t handle) const {
+    bool is_collapsed(const thh::handle_t handle) const {
       return std::find(collapsed_.begin(), collapsed_.end(), handle)
           != collapsed_.end();
     }
