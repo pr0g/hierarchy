@@ -71,4 +71,18 @@ namespace hy {
 namespace demo {
   std::vector<thh::handle_t> create_sample_entities(
     thh::container_t<hy::entity_t>& entities);
-}
+
+  enum class input_e {
+    move_up,
+    move_down,
+    move_left,
+    move_right,
+    show_hide,
+    add_child
+  };
+
+  void process_input(
+    const input_e input, thh::container_t<hy::entity_t>& entities,
+    const std::vector<thh::handle_t>& root_handles,
+    hy::interaction_t& interaction);
+} // namespace demo

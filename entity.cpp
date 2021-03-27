@@ -152,6 +152,43 @@ namespace demo {
     hy::add_children(handles[2], {handles[5], handles[6]}, entities);
     hy::add_children(handles[8], {handles[9]}, entities);
 
-    return {handles[0], handles[7],handles[8]};
+    return {handles[0], handles[7], handles[8]};
+  }
+
+  void process_input(
+    const input_e input, thh::container_t<hy::entity_t>& entities,
+    const std::vector<thh::handle_t>& root_handles,
+    hy::interaction_t& interaction) {
+    switch (input) {
+      case input_e::move_left:
+        hy::try_move_left(interaction, entities, root_handles);
+        break;
+      case input_e::move_up:
+        hy::move_up(interaction);
+        break;
+      case input_e::move_right:
+        if (hy::try_move_right(interaction, entities)) {
+          break;
+        }
+        [[fallthrough]];
+      case input_e::move_down:
+        hy::move_down(interaction);
+        break;
+      case input_e::show_hide:
+        hy::toggle_collapsed(interaction);
+        break;
+      case input_e::add_child: {
+        auto next_handle = entities.add();
+        entities.call(next_handle, [next_handle](auto& entity) {
+          entity.name_ =
+            std::string("entity_") + std::to_string(next_handle.id_);
+        });
+        hy::add_children(
+          interaction.neighbors_[interaction.element_], {next_handle},
+          entities);
+      } break;
+      default:
+        break;
+    }
   }
 } // namespace demo

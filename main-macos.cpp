@@ -1,6 +1,7 @@
 #include "entity.hpp"
 
 #include <ncurses.h>
+#include <optional>
 #include <panel.h>
 #include <stack>
 #include <string.h>
@@ -53,36 +54,26 @@ int main(int argc, char** argv) {
       get_row_col);
     refresh();
     move(0, 0);
-    switch (int key = getch(); key) {
-      case KEY_LEFT:
-        hy::try_move_left(interaction, entities, root_handles);
-        break;
-      case KEY_UP:
-        hy::move_up(interaction);
-        break;
-      case KEY_RIGHT:
-        if (hy::try_move_right(interaction, entities)) {
-          break;
-        }
-        [[fallthrough]];
-      case KEY_DOWN:
-        hy::move_down(interaction);
-        break;
-      case ' ':
-        hy::toggle_collapsed(interaction);
-        break;
-      case 10: { // enter
-        auto next_handle = entities.add();
-        entities.call(next_handle, [next_handle](auto& entity) {
-          entity.name_ =
-            std::string("entity_") + std::to_string(next_handle.id_);
-        });
-        hy::add_children(
-          interaction.neighbors_[interaction.element_], {next_handle},
-          entities);
-      } break;
-      default:
-        break;
+    std::optional<demo::input_e> input = [] ()-> std::optional<demo::input_e> {
+      switch (int key = getch(); key) {
+        case KEY_LEFT:
+          return demo::input_e::move_left;
+        case KEY_RIGHT:
+          return demo::input_e::move_right;
+        case KEY_UP:
+          return demo::input_e::move_up;
+        case KEY_DOWN:
+          return demo::input_e::move_down;
+        case ' ':
+          return demo::input_e::show_hide;
+        case 10: // enter
+          return demo::input_e::add_child;
+        default:
+          return std::nullopt;
+      }
+    }();
+    if (input.has_value()) {
+      demo::process_input(input.value(), entities, root_handles, interaction);
     }
   }
 
