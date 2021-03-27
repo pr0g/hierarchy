@@ -54,17 +54,19 @@ int main(int argc, char** argv) {
     refresh();
     move(0, 0);
     switch (int key = getch(); key) {
-      case KEY_RIGHT:
-        hy::try_move_right(interaction, entities);
-        break;
       case KEY_LEFT:
         hy::try_move_left(interaction, entities, root_handles);
         break;
-      case KEY_DOWN:
-        hy::move_down(interaction);
-        break;
       case KEY_UP:
         hy::move_up(interaction);
+        break;
+      case KEY_RIGHT:
+        if (hy::try_move_right(interaction, entities)) {
+          break;
+        }
+        [[fallthrough]];
+      case KEY_DOWN:
+        hy::move_down(interaction);
         break;
       case ' ':
         hy::toggle_collapsed(interaction);
