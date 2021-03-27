@@ -15,6 +15,23 @@ namespace hy {
     thh::handle_t parent_;
   };
 
+  inline void add_children(
+    const thh::handle_t entity_handle,
+    const std::vector<thh::handle_t>& child_handles,
+    thh::container_t<entity_t>& entities) {
+    entities.call(entity_handle, [&child_handles](auto& entity) {
+      entity.children_.insert(
+        entity.children_.end(), child_handles.begin(), child_handles.end());
+    });
+    std::for_each(
+      child_handles.begin(), child_handles.end(),
+      [&entities, entity_handle](const auto child_handle) {
+        entities.call(child_handle, [entity_handle](auto& entity) {
+          entity.parent_ = entity_handle;
+        });
+      });
+  }
+
   struct interaction_t {
     int element_ = 0;
     std::vector<thh::handle_t> neighbors_;
@@ -29,9 +46,9 @@ namespace hy {
   };
 
   bool try_move_right(
-    interaction_t& interaction, thh::container_t<hy::entity_t>& entities);
+    interaction_t& interaction, const thh::container_t<hy::entity_t>& entities);
   bool try_move_left(
-    interaction_t& interaction, thh::container_t<hy::entity_t>& entities,
+    interaction_t& interaction, const thh::container_t<hy::entity_t>& entities,
     const std::vector<thh::handle_t>& root_handles);
   void move_up(interaction_t& interaction);
   void move_down(interaction_t& interaction);

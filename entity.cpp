@@ -4,29 +4,35 @@
 
 namespace hy {
   bool try_move_right(
-    interaction_t& interaction, thh::container_t<hy::entity_t>& entities) {
+    interaction_t& interaction,
+    const thh::container_t<hy::entity_t>& entities) {
+    bool succeeded = false;
     if (!interaction.is_collapsed(interaction.selected_)) {
-      if (hy::entity_t* entity = entities.resolve(interaction.selected_)) {
-        if (!entity->children_.empty()) {
-          interaction.selected_ = entity->children_.front();
-          interaction.neighbors_ = entity->children_;
+      entities.call(interaction.selected_, [&](const auto& entity) {
+        if (!entity.children_.empty()) {
+          interaction.selected_ = entity.children_.front();
+          interaction.neighbors_ = entity.children_;
           interaction.element_ = 0;
-          return true;
+          succeeded = true;
         }
-      }
+      });
     }
-    return false;
+    return succeeded;
   }
 
   bool try_move_left(
-    interaction_t& interaction, thh::container_t<hy::entity_t>& entities,
+    interaction_t& interaction, const thh::container_t<hy::entity_t>& entities,
     const std::vector<thh::handle_t>& root_handles) {
-    if (hy::entity_t* entity = entities.resolve(interaction.selected_)) {
-      if (hy::entity_t* parent = entities.resolve(entity->parent_)) {
-        interaction.selected_ = entity->parent_;
-        if (hy::entity_t* grandparent = entities.resolve(parent->parent_)) {
-          interaction.neighbors_ = grandparent->children_;
-        } else {
+    bool succeeded = false;
+    entities.call(interaction.selected_, [&](const auto& entity) {
+      entities.call(entity.parent_, [&](const auto& parent) {
+        interaction.selected_ = entity.parent_;
+        bool has_grandparent = false;
+        entities.call(parent.parent_, [&](const auto& grandparent) {
+          has_grandparent = true;
+          interaction.neighbors_ = grandparent.children_;
+        });
+        if (!has_grandparent) {
           interaction.neighbors_ = root_handles;
         }
         interaction.element_ =
@@ -34,10 +40,10 @@ namespace hy {
             interaction.neighbors_.begin(), interaction.neighbors_.end(),
             interaction.selected_)
           - interaction.neighbors_.begin();
-        return true;
-      }
-    }
-    return false;
+        succeeded = true;
+      });
+    });
+    return succeeded;
   }
 
   void move_up(interaction_t& interaction) {
@@ -108,21 +114,22 @@ namespace hy {
         }
       }
 
-      const auto* entity = entities.resolve(entity_handle);
-      const auto selected = interaction.selected_ == entity_handle;
-      display_name(
-        row, col + curr_indent, selected,
-        interaction.is_collapsed(entity_handle) && !entity->children_.empty(),
-        entity->name_);
+      entities.call(entity_handle, [&, r = row, c = col](const auto& entity) {
+        const auto selected = interaction.selected_ == entity_handle;
+        display_name(
+          r, c + curr_indent, selected,
+          interaction.is_collapsed(entity_handle) && !entity.children_.empty(),
+          entity.name_);
 
-      const auto& children = entity->children_;
-      if (!children.empty() && !interaction.is_collapsed(entity_handle)) {
-        indent_tracker.push_front(
-          indent_tracker_t{curr_indent + indent_size, (int)children.size()});
-        for (auto it = children.rbegin(); it != children.rend(); ++it) {
-          entity_handle_stack.push_front(*it);
+        const auto& children = entity.children_;
+        if (!children.empty() && !interaction.is_collapsed(entity_handle)) {
+          indent_tracker.push_front(
+            indent_tracker_t{curr_indent + indent_size, (int)children.size()});
+          for (auto it = children.rbegin(); it != children.rend(); ++it) {
+            entity_handle_stack.push_front(*it);
+          }
         }
-      }
+      });
     }
   }
 } // namespace hy
@@ -142,38 +149,11 @@ namespace demo {
     auto handle_j = entities.add("entity_j");
     auto handle_k = entities.add("entity_k");
 
-    auto* entity_a = entities.resolve(handle_a);
-    auto* entity_b = entities.resolve(handle_b);
-    auto* entity_c = entities.resolve(handle_c);
-    auto* entity_d = entities.resolve(handle_d);
-    auto* entity_e = entities.resolve(handle_e);
-    auto* entity_f = entities.resolve(handle_f);
-    auto* entity_g = entities.resolve(handle_g);
-    auto* entity_h = entities.resolve(handle_h);
-    auto* entity_i = entities.resolve(handle_i);
-    auto* entity_j = entities.resolve(handle_j);
-    auto* entity_k = entities.resolve(handle_k);
-
-    entity_a->children_.push_back(handle_b);
-    entity_a->children_.push_back(handle_c);
-    entity_b->parent_ = handle_a;
-    entity_c->parent_ = handle_a;
-
-    entity_g->children_.push_back(handle_k);
-    entity_k->parent_ = handle_g;
-
-    entity_h->children_.push_back(handle_d);
-    entity_h->children_.push_back(handle_e);
-    entity_d->parent_ = handle_h;
-    entity_e->parent_ = handle_h;
-
-    entity_c->children_.push_back(handle_f);
-    entity_c->children_.push_back(handle_g);
-    entity_f->parent_ = handle_c;
-    entity_g->parent_ = handle_c;
-
-    entity_i->children_.push_back(handle_j);
-    entity_j->parent_ = handle_i;
+    hy::add_children(handle_a, {handle_b, handle_c}, entities);
+    hy::add_children(handle_g, {handle_k}, entities);
+    hy::add_children(handle_h, {handle_d, handle_e}, entities);
+    hy::add_children(handle_c, {handle_f, handle_g}, entities);
+    hy::add_children(handle_i, {handle_j}, entities);
 
     return {handle_a, handle_h, handle_i};
   }
