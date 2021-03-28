@@ -8,15 +8,23 @@ FetchContent_Declare(
   GIT_TAG        16df2db55d32a68fe9c3f8e49733a98d27bd2dba)
 FetchContent_MakeAvailable(thh_handles)
 
-add_executable(${PROJECT_NAME})
+add_library(${PROJECT_NAME})
+target_sources(${PROJECT_NAME} PRIVATE src/entity.cpp)
+target_include_directories(
+  ${PROJECT_NAME} PUBLIC
+  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
+target_link_libraries(
+  ${PROJECT_NAME} PUBLIC thh_handles)
+
+add_executable(${PROJECT_NAME}-demo)
 
 if (${CMAKE_HOST_APPLE})
   find_package(Curses)
-  target_sources(${PROJECT_NAME} PRIVATE main-macos.cpp entity.cpp)
-  target_link_libraries(${PROJECT_NAME} PRIVATE Curses thh_handles)
+  target_sources(${PROJECT_NAME}-demo PRIVATE main-macos.cpp)
+  target_link_libraries(${PROJECT_NAME}-demo PRIVATE Curses  ${PROJECT_NAME})
 endif()
 
 if (${CMAKE_HOST_WIN32})
-  target_sources(${PROJECT_NAME} PRIVATE main-win.cpp entity.cpp)
-  target_link_libraries(${PROJECT_NAME} PRIVATE thh_handles)
+  target_sources(${PROJECT_NAME}-demo PRIVATE main-win.cpp)
+  target_link_libraries(${PROJECT_NAME}-demo PRIVATE ${PROJECT_NAME})
 endif()
