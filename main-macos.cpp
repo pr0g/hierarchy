@@ -49,11 +49,14 @@ int main(int argc, char** argv) {
 
   for (bool running = true; running;) {
     clear();
+
     hy::display_hierarchy(
       entities, interaction, root_handles, display_name, display_connection,
       get_row_col);
+
     refresh();
     move(0, 0);
+
     std::optional<demo::input_e> input = [] ()-> std::optional<demo::input_e> {
       switch (int key = getch(); key) {
         case KEY_LEFT:
@@ -72,6 +75,7 @@ int main(int argc, char** argv) {
           return std::nullopt;
       }
     }();
+
     if (input.has_value()) {
       demo::process_input(input.value(), entities, root_handles, interaction);
     }

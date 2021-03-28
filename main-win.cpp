@@ -124,6 +124,7 @@ int main(int argc, char** argv) {
           return std::nullopt;
       }
     }();
+
     if (input.has_value()) {
       demo::process_input(input.value(), entities, root_handles, interaction);
     }
