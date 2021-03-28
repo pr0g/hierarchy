@@ -103,14 +103,14 @@ namespace hy {
         }
       }
 
-      auto entity_handle = entity_handle_stack.front();
-      entity_handle_stack.pop_front();
-
       for (const auto ind : indent_tracker) {
         if (ind.count_ != 0 && ind.indent_ != curr_indent) {
           display_connection(level, ind.indent_);
         }
       }
+
+      const auto entity_handle = entity_handle_stack.front();
+      entity_handle_stack.pop_front();
 
       entities.call(entity_handle, [&](const auto& entity) {
         const auto selected = interaction.selected_ == entity_handle;
