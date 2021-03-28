@@ -59,7 +59,7 @@ int main(int argc, char** argv) {
   const auto display_name = [](
                               int level, int indent, bool selected,
                               bool hidden_children, const std::string& name) {
-    printf(CSI "%d;%dH", level, indent * 4); // set cursor position
+    printf(CSI "%d;%dH", level + 1, indent * 4); // set cursor position
     printf("|-- ");
     if (selected) {
       printf(CSI "7m"); // inverted
@@ -73,7 +73,7 @@ int main(int argc, char** argv) {
   };
 
   const auto display_connection = [](int level, int indent) {
-    printf(CSI "%d;%dH", level, indent * 4); // set cursor position
+    printf(CSI "%d;%dH", level + 1, indent * 4); // set cursor position
     printf("|");
   };
 
