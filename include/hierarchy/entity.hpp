@@ -54,18 +54,18 @@ namespace hy {
   void move_down(interaction_t& interaction);
   void toggle_collapsed(interaction_t& interaction);
 
+  // level, indent, selected, collapsed, name
   using display_name_fn =
-    std::function<void(int, int, bool, bool, const std::string& name)>;
+    std::function<void(int, int, bool, bool, const std::string&)>;
+  // level, indent
   using display_connection_fn = std::function<void(int, int)>;
-  using get_row_col_fn = std::function<std::pair<int, int>()>;
 
   void display_hierarchy(
     const thh::container_t<hy::entity_t>& entities,
     const interaction_t& interaction,
     const std::vector<thh::handle_t>& root_handles,
     const display_name_fn& display_name,
-    const display_connection_fn& display_connection,
-    const get_row_col_fn& get_row_col);
+    const display_connection_fn& display_connection);
 } // namespace hy
 
 namespace demo {

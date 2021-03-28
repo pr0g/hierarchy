@@ -18,9 +18,9 @@ int main(int argc, char** argv) {
   curs_set(0); // hide cursor
 
   const auto display_name = [](
-                              int row, int col, bool selected,
+                              int level, int indent, bool selected,
                               bool hidden_children, const std::string& name) {
-    mvprintw(row, col, "|-- ");
+    mvprintw(level, indent * 4, "|-- ");
     if (selected) {
       attron(A_REVERSE);
     }
@@ -32,15 +32,8 @@ int main(int argc, char** argv) {
     attroff(A_BOLD);
   };
 
-  const auto display_connection = [](int row, int col) {
-    mvprintw(row, col, "|");
-  };
-
-  const auto get_row_col = [] {
-    int row = 0;
-    int col = 0;
-    getyx(stdscr, row, col);
-    return std::pair(row, col);
+  const auto display_connection = [](int level, int indent) {
+    mvprintw(level, indent * 4, "|");
   };
 
   hy::interaction_t interaction;
@@ -51,8 +44,7 @@ int main(int argc, char** argv) {
     clear();
 
     hy::display_hierarchy(
-      entities, interaction, root_handles, display_name, display_connection,
-      get_row_col);
+      entities, interaction, root_handles, display_name, display_connection);
 
     refresh();
     move(0, 0);

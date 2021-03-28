@@ -56,15 +56,10 @@ int main(int argc, char** argv) {
   interaction.selected_ = root_handles.front();
   interaction.neighbors_ = root_handles;
 
-  int g_row = 1;
-  int g_col = 1;
-
-  const auto display_name = [&g_row, &g_col](
-                              int row, int col, bool selected,
+  const auto display_name = [](
+                              int level, int indent, bool selected,
                               bool hidden_children, const std::string& name) {
-    g_row = row + 1;
-    g_col = 0;
-    printf(CSI "%d;%dH", row, col); // set cursor position
+    printf(CSI "%d;%dH", level, indent * 4); // set cursor position
     printf("|-- ");
     if (selected) {
       printf(CSI "7m"); // inverted
@@ -77,23 +72,18 @@ int main(int argc, char** argv) {
     printf(CSI "0m"); // restore default
   };
 
-  const auto display_connection = [](int row, int col) {
-    printf(CSI "%d;%dH", row, col); // set cursor position
+  const auto display_connection = [](int level, int indent) {
+    printf(CSI "%d;%dH", level, indent * 4); // set cursor position
     printf("|");
   };
 
-  const auto get_row_col = [&g_row, &g_col] { return std::pair(g_row, g_col); };
-
   printf(CSI "?25l"); // hide cursor
   for (bool running = true; running;) {
-    g_row = 1;
-    g_col = 1;
     printf(CSI "1;1H"); // set cursor position
     printf(CSI "0J"); // clear screen
 
     hy::display_hierarchy(
-      entities, interaction, root_handles, display_name, display_connection,
-      get_row_col);
+      entities, interaction, root_handles, display_name, display_connection);
 
     std::optional<demo::input_e> input =
       [&running]() -> std::optional<demo::input_e> {
