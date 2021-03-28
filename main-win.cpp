@@ -63,7 +63,7 @@ int main(int argc, char** argv) {
                               int row, int col, bool selected,
                               bool hidden_children, const std::string& name) {
     g_row = row + 1;
-    g_col = 1;
+    g_col = 0;
     printf(CSI "%d;%dH", row, col); // set cursor position
     printf("|-- ");
     if (selected) {
