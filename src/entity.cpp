@@ -74,8 +74,7 @@ namespace hy {
   void display_hierarchy(
     const thh::container_t<hy::entity_t>& entities,
     const interaction_t& interaction,
-    const std::vector<thh::handle_t>& root_handles,
-    const display_fn& display,
+    const std::vector<thh::handle_t>& root_handles, const display_fn& display,
     const scope_exit_fn& scope_exit,
     const display_connection_fn& display_connection) {
     std::deque<thh::handle_t> entity_handle_stack;
@@ -99,8 +98,8 @@ namespace hy {
 
       int last = last_indent;
       while (curr_indent < last) {
-          scope_exit();
-          last--;
+        scope_exit();
+        last--;
       }
 
       {
@@ -127,8 +126,7 @@ namespace hy {
         display(
           level, curr_indent, selected,
           interaction.is_collapsed(entity_handle) && !children.empty(),
-          !children.empty(),
-          entity.name_);
+          !children.empty(), entity.name_);
 
         if (!children.empty() && !interaction.is_collapsed(entity_handle)) {
           indent_tracker.push_front(

@@ -64,8 +64,7 @@ namespace hy {
   void display_hierarchy(
     const thh::container_t<hy::entity_t>& entities,
     const interaction_t& interaction,
-    const std::vector<thh::handle_t>& root_handles,
-    const display_fn& display,
+    const std::vector<thh::handle_t>& root_handles, const display_fn& display,
     const scope_exit_fn& scope_exit,
     const display_connection_fn& display_connection);
 } // namespace hy

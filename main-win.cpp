@@ -2,9 +2,9 @@
 
 #include <conio.h>
 #include <cstdio>
+#include <optional>
 #include <stdlib.h>
 #include <windows.h>
-#include <optional>
 
 #define ESC "\x1b"
 #define CSI "\x1b["
