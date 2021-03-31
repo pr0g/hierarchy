@@ -19,12 +19,12 @@ int main(int argc, char** argv) {
 
   const auto display_name = [](
                               int level, int indent, bool selected,
-                              bool hidden_children, const std::string& name) {
+                              bool collapsed, bool has_children, const std::string& name) {
     mvprintw(level, indent * 4, "|-- ");
     if (selected) {
       attron(A_REVERSE);
     }
-    if (hidden_children) {
+    if (collapsed) {
       attron(A_BOLD);
     }
     printw("%s\n", name.c_str());
@@ -44,7 +44,7 @@ int main(int argc, char** argv) {
     clear();
 
     hy::display_hierarchy(
-      entities, interaction, root_handles, display_name, display_connection);
+      entities, interaction, root_handles, display_name, []{}, display_connection);
 
     refresh();
     move(0, 0);

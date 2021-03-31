@@ -75,7 +75,8 @@ namespace hy {
     const thh::container_t<hy::entity_t>& entities,
     const interaction_t& interaction,
     const std::vector<thh::handle_t>& root_handles,
-    const display_name_fn& display_name,
+    const display_push_fn& display_push,
+    const display_pop_fn& display_pop,
     const display_connection_fn& display_connection) {
     std::deque<thh::handle_t> entity_handle_stack;
     for (auto it = root_handles.rbegin(); it != root_handles.rend(); ++it) {
@@ -92,8 +93,15 @@ namespace hy {
       indent_tracker_t{0, (int)entity_handle_stack.size()});
 
     int level = 0; // the level (row) in the hierarchy
+    int last_indent = 0;
     while (!entity_handle_stack.empty()) {
       const auto curr_indent = indent_tracker.front().indent_;
+
+      int last = last_indent;
+      while (curr_indent < last) {
+          display_pop();
+          last--;
+      }
 
       {
         auto& indent_ref = indent_tracker.front();
@@ -114,12 +122,14 @@ namespace hy {
 
       entities.call(entity_handle, [&](const auto& entity) {
         const auto selected = interaction.selected_ == entity_handle;
-        display_name(
-          level, curr_indent, selected,
-          interaction.is_collapsed(entity_handle) && !entity.children_.empty(),
-          entity.name_);
 
         const auto& children = entity.children_;
+        display_push(
+          level, curr_indent, selected,
+          interaction.is_collapsed(entity_handle) && !children.empty(),
+          !children.empty(),
+          entity.name_);
+
         if (!children.empty() && !interaction.is_collapsed(entity_handle)) {
           indent_tracker.push_front(
             indent_tracker_t{curr_indent + 1, (int)children.size()});
@@ -129,6 +139,12 @@ namespace hy {
         }
       });
       level++;
+      last_indent = curr_indent;
+    }
+
+    while (last_indent > 0) {
+      display_pop();
+      last_indent--;
     }
   }
 } // namespace hy
@@ -148,7 +164,8 @@ namespace demo {
     hy::add_children(handles[0], {handles[1], handles[2]}, entities);
     hy::add_children(handles[6], {handles[10]}, entities);
     hy::add_children(handles[7], {handles[3], handles[4]}, entities);
-    hy::add_children(handles[2], {handles[5], handles[6], handles[11]}, entities);
+    hy::add_children(
+      handles[2], {handles[5], handles[6], handles[11]}, entities);
     hy::add_children(handles[8], {handles[9]}, entities);
 
     return {handles[0], handles[7], handles[8]};

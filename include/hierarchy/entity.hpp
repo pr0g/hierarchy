@@ -55,8 +55,9 @@ namespace hy {
   void toggle_collapsed(interaction_t& interaction);
 
   // level, indent, selected, collapsed, name
-  using display_name_fn =
-    std::function<void(int, int, bool, bool, const std::string&)>;
+  using display_push_fn =
+    std::function<void(int, int, bool, bool, bool, const std::string&)>;
+  using display_pop_fn = std::function<void()>;
   // level, indent
   using display_connection_fn = std::function<void(int, int)>;
 
@@ -64,7 +65,8 @@ namespace hy {
     const thh::container_t<hy::entity_t>& entities,
     const interaction_t& interaction,
     const std::vector<thh::handle_t>& root_handles,
-    const display_name_fn& display_name,
+    const display_push_fn& display_push,
+    const display_pop_fn& display_pop,
     const display_connection_fn& display_connection);
 } // namespace hy
 
