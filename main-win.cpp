@@ -58,13 +58,14 @@ int main(int argc, char** argv) {
 
   const auto display_name = [](
                               int level, int indent, bool selected,
-                              bool hidden_children, const std::string& name) {
+                              bool collapsed, bool has_children,
+                              const std::string& name) {
     printf(CSI "%d;%dH", level + 1, indent * 4); // set cursor position
     printf("|-- ");
     if (selected) {
       printf(CSI "7m"); // inverted
     }
-    if (hidden_children) {
+    if (collapsed) {
       printf(CSI "1m"); // bold/bright
       printf(CSI "33m"); // foreground yellow
     }
@@ -83,7 +84,8 @@ int main(int argc, char** argv) {
     printf(CSI "0J"); // clear screen
 
     hy::display_hierarchy(
-      entities, interaction, root_handles, display_name, display_connection);
+      entities, interaction, root_handles, display_name, [] {},
+      display_connection);
 
     std::optional<demo::input_e> input =
       [&running]() -> std::optional<demo::input_e> {
