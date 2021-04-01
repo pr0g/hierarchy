@@ -54,9 +54,9 @@ namespace hy {
   void move_down(interaction_t& interaction);
   void toggle_collapsed(interaction_t& interaction);
 
-  // level, indent, selected, collapsed, has_children, name
-  using display_fn =
-    std::function<void(int, int, bool, bool, bool, const std::string&)>;
+  // level, indent, entity_handle, selected, collapsed, has_children, name
+  using display_fn = std::function<void(
+    int, int, thh::handle_t, bool, bool, bool, const std::string&)>;
   using scope_exit_fn = std::function<void()>;
   // level, indent
   using display_connection_fn = std::function<void(int, int)>;

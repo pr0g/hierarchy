@@ -57,8 +57,8 @@ int main(int argc, char** argv) {
   interaction.neighbors_ = root_handles;
 
   const auto display_name = [](
-                              int level, int indent, bool selected,
-                              bool collapsed, bool has_children,
+                              int level, int indent, thh::handle_t /*unused*/,
+                              bool selected, bool collapsed, bool has_children,
                               const std::string& name) {
     printf(CSI "%d;%dH", level + 1, indent * 4); // set cursor position
     printf("|-- ");

@@ -17,9 +17,13 @@ int main(int argc, char** argv) {
   noecho(); // don't echo while we do getch
   curs_set(0); // hide cursor
 
+  hy::interaction_t interaction;
+  interaction.selected_ = root_handles.front();
+  interaction.neighbors_ = root_handles;
+
   const auto display_name = [](
-                              int level, int indent, bool selected,
-                              bool collapsed, bool has_children,
+                              int level, int indent, thh::handle_t /*unused*/,
+                              bool selected, bool collapsed, bool has_children,
                               const std::string& name) {
     mvprintw(level, indent * 4, "|-- ");
     if (selected) {
@@ -36,10 +40,6 @@ int main(int argc, char** argv) {
   const auto display_connection = [](int level, int indent) {
     mvprintw(level, indent * 4, "|");
   };
-
-  hy::interaction_t interaction;
-  interaction.selected_ = root_handles.front();
-  interaction.neighbors_ = root_handles;
 
   for (bool running = true; running;) {
     clear();

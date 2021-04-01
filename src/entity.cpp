@@ -124,7 +124,7 @@ namespace hy {
 
         const auto& children = entity.children_;
         display(
-          level, curr_indent, selected,
+          level, curr_indent, entity_handle, selected,
           interaction.is_collapsed(entity_handle) && !children.empty(),
           !children.empty(), entity.name_);
 
