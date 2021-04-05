@@ -23,7 +23,6 @@ namespace hy {
     const auto location = interaction.element_;
     if (location != 0) {
       auto next_root = interaction.neighbors_[interaction.element_ - 1];
-
       bool descended = false;
       while (true) {
         const bool children = has_children(next_root, entities);
@@ -40,27 +39,19 @@ namespace hy {
 
       if (descended) {
         entities.call(next_root, [&](const auto& entity) {
-          // bool has_parent = false;
           entities.call(entity.parent_, [&](const auto& parent) {
-            // entities.call(parent.parent_, [&](const auto& grandparent) {
-            // has_parent = true;
             interaction.neighbors_ = parent.children_;
             interaction.element_ = interaction.neighbors_.size() - 1;
             interaction.selected_ =
               interaction.neighbors_[interaction.element_];
           });
-          // if (!has_parent) {
-          // interaction.neighbors_ = root_handles;
-          //}
         });
       } else {
         interaction.element_--;
         interaction.selected_ = interaction.neighbors_[interaction.element_];
       }
-      //});
     } else {
       entities.call(interaction.selected_, [&](const auto& entity) {
-        // bool has_parent = false;
         entities.call(entity.parent_, [&](const auto& parent) {
           bool has_grandparent = false;
           entities.call(parent.parent_, [&](const auto& grandparent) {
@@ -70,7 +61,6 @@ namespace hy {
           if (!has_grandparent) {
             interaction.neighbors_ = root_handles;
           }
-
           interaction.element_ = std::find(
                                    interaction.neighbors_.begin(),
                                    interaction.neighbors_.end(), entity.parent_)
@@ -79,43 +69,6 @@ namespace hy {
         });
       });
     }
-
-    // bool can_move = false;
-    // if (const int prev_element = interaction.element_ - 1; prev_element
-    // >= 0)
-    // {
-    //  const bool children =
-    //    has_children(interaction.neighbors_[prev_element], entities);
-    //  if (
-    //    !children
-    //    || (children &&
-    //    interaction.is_collapsed(interaction.neighbors_[prev_element]))) {
-    //    can_move = true;
-    //  }
-    //} else {
-    //  entities.call(interaction.selected_, [&](const auto& entity) {
-    //    thh::handle_t ancestor = entity.parent_;
-    //    entities.call(ancestor, [&](const auto& parent) { if () });
-    //  });
-    //}
-    // if (can_move) {
-    //  interaction.element_--;
-    //  interaction.selected_ =
-    //  interaction.neighbors_[interaction.element_];
-    //} else {
-    //  entities.call(interaction.selected_, [&](const auto& entity) {
-    //    thh::handle_t ancestor = entity.parent_;
-    //    std::vector<thh::handle_t> ancestor_neighbors =
-    //    interaction.neighbors_; entities.call(entity.parent_, [&](const
-    //    auto& parent) {
-    //      auto element =
-    //        std::find(
-    //          ancestor_neighbors.begin(), ancestor_neighbors.end(),
-    //          ancestor)
-    //        - ancestor_neighbors.begin();
-    //    });
-    //  });
-    //}
   }
 
   void move_down(
