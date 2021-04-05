@@ -1,5 +1,7 @@
 #include "hierarchy/entity.hpp"
 
+#include <wil/common.h>
+
 #include <conio.h>
 #include <cstdio>
 #include <optional>
@@ -44,6 +46,9 @@ int main(int argc, char** argv) {
   }
 
   DWORD dwInMode = dwOriginalInMode | ENABLE_VIRTUAL_TERMINAL_INPUT;
+  WI_ClearFlag(dwInMode, ENABLE_LINE_INPUT);
+  WI_ClearFlag(dwInMode, ENABLE_ECHO_INPUT);
+
   if (!SetConsoleMode(hIn, dwInMode)) {
     // failed to set VT input mode, can't do anything here.
     return -1;
@@ -82,6 +87,12 @@ int main(int argc, char** argv) {
   for (bool running = true; running;) {
     printf(CSI "1;1H"); // set cursor position
     printf(CSI "0J"); // clear screen
+
+    // test to retrieve cursor position
+    int r = 0;
+    int c = 0;
+    printf(CSI "6n");
+    scanf(CSI "%d;%dR", &r, &c);
 
     hy::display_hierarchy(
       entities, interaction, root_handles, display_name, [] {},

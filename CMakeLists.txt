@@ -25,6 +25,11 @@ if (${CMAKE_HOST_APPLE})
 endif()
 
 if (${CMAKE_HOST_WIN32})
+  FetchContent_Declare(
+    wil
+    GIT_REPOSITORY https://github.com/microsoft/wil.git
+    GIT_TAG        6b508a358fb7b12264ada0829cff83862d33f44e)
+  FetchContent_MakeAvailable(wil)
   target_sources(${PROJECT_NAME}-demo PRIVATE main-win.cpp)
-  target_link_libraries(${PROJECT_NAME}-demo PRIVATE ${PROJECT_NAME})
+  target_link_libraries(${PROJECT_NAME}-demo PRIVATE ${PROJECT_NAME} WIL)
 endif()
