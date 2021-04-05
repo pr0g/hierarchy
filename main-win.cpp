@@ -108,19 +108,17 @@ int main(int argc, char** argv) {
         case 0:
           switch (int inner_key = _getch(); inner_key) {
             case 75:
-              return demo::input_e::move_left;
+              return demo::input_e::collapse;
             case 72:
               return demo::input_e::move_up;
             case 77:
-              return demo::input_e::move_right;
+              return demo::input_e::expand;
             case 80:
               return demo::input_e::move_down;
             default:
               return std::nullopt;
           }
           break;
-        case ' ': // space
-          return demo::input_e::show_hide;
         case 13: // enter
           return demo::input_e::add_child;
         default:
