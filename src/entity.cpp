@@ -1,73 +1,116 @@
 #include "hierarchy/entity.hpp"
 
 #include <deque>
+#include <numeric>
 
 namespace hy {
-  bool try_move_right(
-    interaction_t& interaction,
-    const thh::container_t<hy::entity_t>& entities) {
-    bool succeeded = false;
-    if (!interaction.is_collapsed(interaction.selected_)) {
+  namespace {
+    bool has_children(
+      const thh::handle_t handle,
+      const thh::container_t<hy::entity_t>& entities) {
+      bool children = false;
+      entities.call(handle, [&](const auto& entity) {
+        children = !entity.children_.empty();
+      });
+      return children;
+    }
+  } // namespace
+
+  void move_up(
+    interaction_t& interaction, const thh::container_t<hy::entity_t>& entities,
+    const std::vector<thh::handle_t>& root_handles) {
+    if (interaction.element_ != 0) {
+      interaction.element_--;
+      interaction.selected_ = interaction.neighbors_[interaction.element_];
+    } else {
       entities.call(interaction.selected_, [&](const auto& entity) {
-        if (!entity.children_.empty()) {
+        thh::handle_t ancestor = entity.parent_;
+        std::vector<thh::handle_t> ancestor_neighbors = interaction.neighbors_;
+        entities.call(entity.parent_, [&](const auto& parent) {
+          auto element =
+            std::find(
+              ancestor_neighbors.begin(), ancestor_neighbors.end(), ancestor)
+            - ancestor_neighbors.begin();
+        });
+      });
+    }
+  }
+
+  void move_down(
+    interaction_t& interaction, const thh::container_t<hy::entity_t>& entities,
+    const std::vector<thh::handle_t>& root_handles) {
+    auto next_neighbor = [&]() {
+      const int next_element = interaction.element_ + 1;
+      if (next_element == interaction.neighbors_.size()) {
+        entities.call(interaction.selected_, [&](const auto& entity) {
+          bool next = false;
+          thh::handle_t ancestor = entity.parent_;
+          std::vector<thh::handle_t> ancestor_neighbors =
+            interaction.neighbors_;
+          while (!next && ancestor != thh::handle_t()) {
+            entities.call(ancestor, [&](const auto& parent) {
+              bool has_grandparent = false;
+              entities.call(parent.parent_, [&](const auto& grandparent) {
+                has_grandparent = true;
+                ancestor_neighbors = grandparent.children_;
+              });
+              if (!has_grandparent) {
+                ancestor_neighbors = root_handles;
+              }
+              auto element = std::find(
+                               ancestor_neighbors.begin(),
+                               ancestor_neighbors.end(), ancestor)
+                           - ancestor_neighbors.begin() + 1;
+              if (element == ancestor_neighbors.size()) {
+                ancestor = parent.parent_;
+              } else {
+                interaction.element_ = element;
+                interaction.neighbors_ = ancestor_neighbors;
+                interaction.selected_ =
+                  interaction.neighbors_[interaction.element_];
+                next = true;
+              }
+            });
+          }
+        });
+      } else {
+        interaction.element_ = next_element;
+        interaction.selected_ = interaction.neighbors_[interaction.element_];
+      }
+    };
+
+    if (has_children(interaction.selected_, entities)) {
+      if (interaction.is_collapsed(interaction.selected_)) {
+        next_neighbor();
+      } else {
+        entities.call(interaction.selected_, [&](const auto& entity) {
           interaction.selected_ = entity.children_.front();
           interaction.neighbors_ = entity.children_;
           interaction.element_ = 0;
-          succeeded = true;
-        }
-      });
-    }
-    return succeeded;
-  }
-
-  bool try_move_left(
-    interaction_t& interaction, const thh::container_t<hy::entity_t>& entities,
-    const std::vector<thh::handle_t>& root_handles) {
-    bool succeeded = false;
-    entities.call(interaction.selected_, [&](const auto& entity) {
-      entities.call(entity.parent_, [&](const auto& parent) {
-        interaction.selected_ = entity.parent_;
-        bool has_grandparent = false;
-        entities.call(parent.parent_, [&](const auto& grandparent) {
-          has_grandparent = true;
-          interaction.neighbors_ = grandparent.children_;
         });
-        if (!has_grandparent) {
-          interaction.neighbors_ = root_handles;
-        }
-        interaction.element_ =
-          std::find(
-            interaction.neighbors_.begin(), interaction.neighbors_.end(),
-            interaction.selected_)
-          - interaction.neighbors_.begin();
-        succeeded = true;
-      });
-    });
-    return succeeded;
+      }
+    } else {
+      next_neighbor();
+    }
   }
 
-  void move_up(interaction_t& interaction) {
-    interaction.element_ =
-      (interaction.element_ + interaction.neighbors_.size() - 1)
-      % interaction.neighbors_.size();
-    interaction.selected_ = interaction.neighbors_[interaction.element_];
+  void collapse(
+    interaction_t& interaction,
+    const thh::container_t<hy::entity_t>& entities) {
+    if (
+      !interaction.is_collapsed(interaction.selected_)
+      && has_children(interaction.selected_, entities)) {
+      interaction.collapsed_.push_back(interaction.selected_);
+    }
   }
 
-  void move_down(interaction_t& interaction) {
-    interaction.element_ =
-      (interaction.element_ + 1) % interaction.neighbors_.size();
-    interaction.selected_ = interaction.neighbors_[interaction.element_];
-  }
-
-  void toggle_collapsed(interaction_t& interaction) {
+  void expand(interaction_t& interaction) {
     if (interaction.is_collapsed(interaction.selected_)) {
       interaction.collapsed_.erase(
         std::remove(
           interaction.collapsed_.begin(), interaction.collapsed_.end(),
           interaction.selected_),
         interaction.collapsed_.end());
-    } else {
-      interaction.collapsed_.push_back(interaction.selected_);
     }
   }
 
@@ -174,22 +217,17 @@ namespace demo {
     const std::vector<thh::handle_t>& root_handles,
     hy::interaction_t& interaction) {
     switch (input) {
-      case input_e::move_left:
-        hy::try_move_left(interaction, entities, root_handles);
-        break;
       case input_e::move_up:
-        hy::move_up(interaction);
+        hy::move_up(interaction, entities, root_handles);
         break;
-      case input_e::move_right:
-        if (hy::try_move_right(interaction, entities)) {
-          break;
-        }
-        [[fallthrough]];
       case input_e::move_down:
-        hy::move_down(interaction);
+        hy::move_down(interaction, entities, root_handles);
         break;
-      case input_e::show_hide:
-        hy::toggle_collapsed(interaction);
+      case input_e::expand:
+        hy::expand(interaction);
+        break;
+      case input_e::collapse:
+        hy::collapse(interaction, entities);
         break;
       case input_e::add_child: {
         auto next_handle = entities.add();

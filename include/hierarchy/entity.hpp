@@ -45,14 +45,16 @@ namespace hy {
     }
   };
 
-  bool try_move_right(
-    interaction_t& interaction, const thh::container_t<hy::entity_t>& entities);
-  bool try_move_left(
+  void move_up(
     interaction_t& interaction, const thh::container_t<hy::entity_t>& entities,
     const std::vector<thh::handle_t>& root_handles);
-  void move_up(interaction_t& interaction);
-  void move_down(interaction_t& interaction);
-  void toggle_collapsed(interaction_t& interaction);
+  void move_down(
+    interaction_t& interaction, const thh::container_t<hy::entity_t>& entities,
+    const std::vector<thh::handle_t>& root_handles);
+
+  void expand(interaction_t& interaction);
+  void collapse(
+    interaction_t& interaction, const thh::container_t<hy::entity_t>& entities);
 
   // level, indent, entity_handle, selected, collapsed, has_children, name
   using display_fn = std::function<void(
@@ -73,14 +75,7 @@ namespace demo {
   std::vector<thh::handle_t> create_sample_entities(
     thh::container_t<hy::entity_t>& entities);
 
-  enum class input_e {
-    move_up,
-    move_down,
-    move_left,
-    move_right,
-    show_hide,
-    add_child
-  };
+  enum class input_e { move_up, move_down, expand, collapse, add_child };
 
   void process_input(
     const input_e input, thh::container_t<hy::entity_t>& entities,

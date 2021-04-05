@@ -54,15 +54,13 @@ int main(int argc, char** argv) {
     std::optional<demo::input_e> input = []() -> std::optional<demo::input_e> {
       switch (int key = getch(); key) {
         case KEY_LEFT:
-          return demo::input_e::move_left;
+          return demo::input_e::collapse;
         case KEY_RIGHT:
-          return demo::input_e::move_right;
+          return demo::input_e::expand;
         case KEY_UP:
           return demo::input_e::move_up;
         case KEY_DOWN:
           return demo::input_e::move_down;
-        case ' ':
-          return demo::input_e::show_hide;
         case 10: // enter
           return demo::input_e::add_child;
         default:
