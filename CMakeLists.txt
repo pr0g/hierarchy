@@ -16,20 +16,24 @@ target_include_directories(
 target_link_libraries(
   ${PROJECT_NAME} PUBLIC thh_handles)
 
-add_executable(${PROJECT_NAME}-demo)
+option(HIERARCHY_DEMO "Builds simple terminal example of hierarchy" OFF)
 
-if (${CMAKE_HOST_APPLE})
-  find_package(Curses)
-  target_sources(${PROJECT_NAME}-demo PRIVATE main-macos.cpp)
-  target_link_libraries(${PROJECT_NAME}-demo PRIVATE Curses  ${PROJECT_NAME})
-endif()
+if (${HIERARCHY_DEMO})
+  add_executable(${PROJECT_NAME}-demo)
 
-if (${CMAKE_HOST_WIN32})
-  FetchContent_Declare(
-    wil
-    GIT_REPOSITORY https://github.com/microsoft/wil.git
-    GIT_TAG        6b508a358fb7b12264ada0829cff83862d33f44e)
-  FetchContent_MakeAvailable(wil)
-  target_sources(${PROJECT_NAME}-demo PRIVATE main-win.cpp)
-  target_link_libraries(${PROJECT_NAME}-demo PRIVATE ${PROJECT_NAME} WIL)
+  if (${CMAKE_HOST_APPLE})
+    find_package(Curses)
+    target_sources(${PROJECT_NAME}-demo PRIVATE main-macos.cpp)
+    target_link_libraries(${PROJECT_NAME}-demo PRIVATE Curses  ${PROJECT_NAME})
+  endif()
+
+  if (${CMAKE_HOST_WIN32})
+    FetchContent_Declare(
+      wil
+      GIT_REPOSITORY https://github.com/microsoft/wil.git
+      GIT_TAG        6b508a358fb7b12264ada0829cff83862d33f44e)
+    FetchContent_MakeAvailable(wil)
+    target_sources(${PROJECT_NAME}-demo PRIVATE main-win.cpp)
+    target_link_libraries(${PROJECT_NAME}-demo PRIVATE ${PROJECT_NAME} WIL)
+  endif()
 endif()
