@@ -1,5 +1,6 @@
 #include "hierarchy/entity.hpp"
 
+#include <locale.h>
 #include <ncurses.h>
 #include <optional>
 #include <panel.h>
@@ -11,6 +12,9 @@ int main(int argc, char** argv) {
   thh::container_t<hy::entity_t> entities;
   auto root_handles = demo::create_sample_entities(entities);
 
+  // enable support for unicode characters
+  setlocale(LC_CTYPE, "");
+
   initscr(); // start curses mode
   cbreak(); // line buffering disabled (respects Ctrl-C to quit)
   keypad(stdscr, true); // enable function keys
@@ -21,24 +25,24 @@ int main(int argc, char** argv) {
   interaction.selected_ = root_handles.front();
   interaction.neighbors_ = root_handles;
 
-  const auto display_name = [](
-                              int level, int indent, thh::handle_t /*unused*/,
-                              bool selected, bool collapsed, bool has_children,
-                              const std::string& name) {
-    mvprintw(level, indent * 4, "|-- ");
-    if (selected) {
+  const auto display_name = [](const hy::display_info_t& di) {
+    mvprintw(
+      di.level, di.indent * 4,
+      di.last ? "\xE2\x94\x94\xE2\x94\x80\xE2\x94\x80 "
+              : "\xE2\x94\x9C\xE2\x94\x80\xE2\x94\x80 ");
+    if (di.selected) {
       attron(A_REVERSE);
     }
-    if (collapsed) {
+    if (di.collapsed) {
       attron(A_BOLD);
     }
-    printw("%s\n", name.c_str());
+    printw("%s\n", di.name.c_str());
     attroff(A_REVERSE);
     attroff(A_BOLD);
   };
 
   const auto display_connection = [](int level, int indent) {
-    mvprintw(level, indent * 4, "|");
+    mvprintw(level, indent * 4, "\xE2\x94\x82");
   };
 
   for (bool running = true; running;) {

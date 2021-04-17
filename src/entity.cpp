@@ -180,13 +180,15 @@ namespace hy {
         last--;
       }
 
-      {
+      const bool last_element = [&] {
         auto& indent_ref = indent_tracker.front();
         indent_ref.count_--;
         if (indent_ref.count_ == 0) {
           indent_tracker.pop_front();
+          return true;
         }
-      }
+        return false;
+      }();
 
       for (const auto ind : indent_tracker) {
         if (ind.count_ != 0 && ind.indent_ != curr_indent) {
@@ -198,13 +200,20 @@ namespace hy {
       entity_handle_stack.pop_front();
 
       entities.call(entity_handle, [&](const auto& entity) {
-        const auto selected = interaction.selected_ == entity_handle;
-
         const auto& children = entity.children_;
-        display(
-          level, curr_indent, entity_handle, selected,
-          interaction.is_collapsed(entity_handle) && !children.empty(),
-          !children.empty(), entity.name_);
+
+        display_info_t display_info;
+        display_info.level = level;
+        display_info.indent = curr_indent;
+        display_info.entity_handle = entity_handle;
+        display_info.selected = interaction.selected_ == entity_handle;
+        display_info.collapsed =
+          interaction.is_collapsed(entity_handle) && !children.empty();
+        display_info.has_children = !children.empty();
+        display_info.name = entity.name_;
+        display_info.last = last_element;
+
+        display(display_info);
 
         if (!children.empty() && !interaction.is_collapsed(entity_handle)) {
           indent_tracker.push_front(

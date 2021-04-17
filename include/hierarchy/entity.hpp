@@ -56,9 +56,19 @@ namespace hy {
   void collapse(
     interaction_t& interaction, const thh::container_t<hy::entity_t>& entities);
 
-  // level, indent, entity_handle, selected, collapsed, has_children, name
-  using display_fn = std::function<void(
-    int, int, thh::handle_t, bool, bool, bool, const std::string&)>;
+  // info required when displaying each element
+  struct display_info_t {
+    int level;
+    int indent;
+    thh::handle_t entity_handle;
+    bool selected;
+    bool collapsed;
+    bool has_children;
+    std::string name;
+    bool last;
+  };
+
+  using display_fn = std::function<void(const display_info_t&)>;
   using scope_exit_fn = std::function<void()>;
   // level, indent
   using display_connection_fn = std::function<void(int, int)>;
