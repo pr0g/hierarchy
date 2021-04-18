@@ -12,6 +12,10 @@
 #define CSI "\x1b["
 
 int main(int argc, char** argv) {
+  // set input and ouput code pages
+  SetConsoleCP(CP_UTF8);
+  SetConsoleOutputCP(CP_UTF8);
+
   // set output mode to handle virtual terminal sequences
   HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
   if (hOut == INVALID_HANDLE_VALUE) {
@@ -61,26 +65,25 @@ int main(int argc, char** argv) {
   interaction.selected_ = root_handles.front();
   interaction.neighbors_ = root_handles;
 
-  const auto display_name = [](
-                              int level, int indent, thh::handle_t /*unused*/,
-                              bool selected, bool collapsed, bool has_children,
-                              const std::string& name) {
-    printf(CSI "%d;%dH", level + 1, indent * 4); // set cursor position
-    printf("|-- ");
-    if (selected) {
+  const auto display_name = [](const hy::display_info_t& di) {
+    printf(CSI "%d;%dH", di.level + 1, di.indent * 4); // set cursor position
+    printf(
+      di.last ? "\xE2\x94\x94\xE2\x94\x80\xE2\x94\x80 "
+              : "\xE2\x94\x9C\xE2\x94\x80\xE2\x94\x80 ");
+    if (di.selected) {
       printf(CSI "7m"); // inverted
     }
-    if (collapsed) {
+    if (di.collapsed) {
       printf(CSI "1m"); // bold/bright
       printf(CSI "33m"); // foreground yellow
     }
-    printf("%s\n", name.c_str());
+    printf("%s\n", di.name.c_str());
     printf(CSI "0m"); // restore default
   };
 
   const auto display_connection = [](int level, int indent) {
     printf(CSI "%d;%dH", level + 1, indent * 4); // set cursor position
-    printf("|");
+    printf("\xE2\x94\x82");
   };
 
   printf(CSI "?25l"); // hide cursor
