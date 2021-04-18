@@ -9,6 +9,18 @@ namespace thh {
          + doctest::String(", ") + doctest::toString(handle.gen_)
          + doctest::String("}");
   }
+
+  doctest::String toString(const std::vector<thh::handle_t>& handles) {
+    return [&, str = doctest::String()] () mutable {
+      str += "{";
+      std::for_each(handles.begin(), handles.end() - 1, [&](const auto handle) {
+        str += toString(handle);
+        str += ", ";
+      });
+      str += toString(handles.back()) + "}";
+      return str;
+    }();
+  }
 } // namespace thh
 
 TEST_CASE("Hierarchy Traversal") {
@@ -111,6 +123,86 @@ TEST_CASE("Hierarchy Traversal") {
 
     CHECK(interaction.selected_ == thh::handle_t(9, 0));
     CHECK(interaction.element_ == 0);
+    CHECK(
+      interaction.siblings_
+      == hy::siblings(interaction.selected_, entities, root_handles));
+  }
+
+  SUBCASE("move_up on first element has no effect") {
+    interaction.element_ = 0;
+    interaction.selected_ = thh::handle_t(0, 0);
+    interaction.siblings_ =
+      hy::siblings(interaction.selected_, entities, root_handles);
+
+    demo::process_input(
+      demo::input_e::move_up, entities, root_handles, interaction);
+
+    CHECK(interaction.selected_ == thh::handle_t(0, 0));
+    CHECK(interaction.element_ == 0);
+    CHECK(
+      interaction.siblings_
+      == hy::siblings(interaction.selected_, entities, root_handles));
+  }
+
+  SUBCASE("move_up on first child goes to parent") {
+    interaction.element_ = 0;
+    interaction.selected_ = thh::handle_t(1, 0);
+    interaction.siblings_ =
+      hy::siblings(interaction.selected_, entities, root_handles);
+
+    demo::process_input(
+      demo::input_e::move_up, entities, root_handles, interaction);
+
+    CHECK(interaction.selected_ == thh::handle_t(0, 0));
+    CHECK(interaction.element_ == 0);
+    CHECK(
+      interaction.siblings_
+      == hy::siblings(interaction.selected_, entities, root_handles));
+  }
+
+  SUBCASE("move_up on later sibling goes to sibling") {
+    interaction.element_ = 1;
+    interaction.selected_ = thh::handle_t(6, 0);
+    interaction.siblings_ =
+      hy::siblings(interaction.selected_, entities, root_handles);
+
+    demo::process_input(
+      demo::input_e::move_up, entities, root_handles, interaction);
+
+    CHECK(interaction.selected_ == thh::handle_t(5, 0));
+    CHECK(interaction.element_ == 0);
+    CHECK(
+      interaction.siblings_
+      == hy::siblings(interaction.selected_, entities, root_handles));
+  }
+
+  SUBCASE("move_up on expanded sibling goes to sibling child") {
+    interaction.element_ = 2;
+    interaction.selected_ = thh::handle_t(11, 0);
+    interaction.siblings_ =
+      hy::siblings(interaction.selected_, entities, root_handles);
+
+    demo::process_input(
+      demo::input_e::move_up, entities, root_handles, interaction);
+
+    CHECK(interaction.selected_ == thh::handle_t(10, 0));
+    CHECK(interaction.element_ == 0);
+    CHECK(
+      interaction.siblings_
+      == hy::siblings(interaction.selected_, entities, root_handles));
+  }
+
+  SUBCASE("move_up on expanded sibling goes to most expanded sibling child") {
+    interaction.element_ = 1;
+    interaction.selected_ = thh::handle_t(7, 0);
+    interaction.siblings_ =
+      hy::siblings(interaction.selected_, entities, root_handles);
+
+    demo::process_input(
+      demo::input_e::move_up, entities, root_handles, interaction);
+
+    CHECK(interaction.selected_ == thh::handle_t(11, 0));
+    CHECK(interaction.element_ == 2);
     CHECK(
       interaction.siblings_
       == hy::siblings(interaction.selected_, entities, root_handles));
