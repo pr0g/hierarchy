@@ -32,9 +32,25 @@ namespace hy {
       });
   }
 
+  inline std::vector<thh::handle_t> siblings(
+    thh::handle_t entity_handle, const thh::container_t<entity_t>& entities,
+    const std::vector<thh::handle_t>& root_handles) {
+    return entities
+      .call_return(
+        entity_handle,
+        [&](const entity_t& entity) {
+          return entities
+            .call_return(
+              entity.parent_,
+              [](const entity_t& parent) { return parent.children_; })
+            .value_or(root_handles);
+        })
+      .value_or(std::vector<thh::handle_t>{});
+  }
+
   struct interaction_t {
     int element_ = 0;
-    std::vector<thh::handle_t> neighbors_;
+    std::vector<thh::handle_t> siblings_;
 
     thh::handle_t selected_;
     std::vector<thh::handle_t> collapsed_;

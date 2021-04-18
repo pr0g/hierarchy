@@ -23,7 +23,7 @@ int main(int argc, char** argv) {
 
   hy::interaction_t interaction;
   interaction.selected_ = root_handles.front();
-  interaction.neighbors_ = root_handles;
+  interaction.siblings_ = root_handles;
 
   const auto display_name = [](const hy::display_info_t& di) {
     mvprintw(

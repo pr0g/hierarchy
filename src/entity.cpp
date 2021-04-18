@@ -21,7 +21,7 @@ namespace hy {
 
     const auto location = interaction.element_;
     if (location != 0) {
-      auto next_root = interaction.neighbors_[interaction.element_ - 1];
+      auto next_root = interaction.siblings_[interaction.element_ - 1];
       bool descended = false;
       while (true) {
         const bool children = has_children(next_root, entities);
@@ -39,15 +39,15 @@ namespace hy {
       if (descended) {
         entities.call(next_root, [&](const auto& entity) {
           entities.call(entity.parent_, [&](const auto& parent) {
-            interaction.neighbors_ = parent.children_;
-            interaction.element_ = interaction.neighbors_.size() - 1;
+            interaction.siblings_ = parent.children_;
+            interaction.element_ = interaction.siblings_.size() - 1;
             interaction.selected_ =
-              interaction.neighbors_[interaction.element_];
+              interaction.siblings_[interaction.element_];
           });
         });
       } else {
         interaction.element_--;
-        interaction.selected_ = interaction.neighbors_[interaction.element_];
+        interaction.selected_ = interaction.siblings_[interaction.element_];
       }
     } else {
       entities.call(interaction.selected_, [&](const auto& entity) {
@@ -55,16 +55,16 @@ namespace hy {
           bool has_grandparent = false;
           entities.call(parent.parent_, [&](const auto& grandparent) {
             has_grandparent = true;
-            interaction.neighbors_ = grandparent.children_;
+            interaction.siblings_ = grandparent.children_;
           });
           if (!has_grandparent) {
-            interaction.neighbors_ = root_handles;
+            interaction.siblings_ = root_handles;
           }
           interaction.element_ = std::find(
-                                   interaction.neighbors_.begin(),
-                                   interaction.neighbors_.end(), entity.parent_)
-                               - interaction.neighbors_.begin();
-          interaction.selected_ = interaction.neighbors_[interaction.element_];
+                                   interaction.siblings_.begin(),
+                                   interaction.siblings_.end(), entity.parent_)
+                               - interaction.siblings_.begin();
+          interaction.selected_ = interaction.siblings_[interaction.element_];
         });
       });
     }
@@ -75,12 +75,12 @@ namespace hy {
     const std::vector<thh::handle_t>& root_handles) {
     auto next_neighbor = [&]() {
       const int next_element = interaction.element_ + 1;
-      if (next_element == interaction.neighbors_.size()) {
+      if (next_element == interaction.siblings_.size()) {
         entities.call(interaction.selected_, [&](const auto& entity) {
           bool next = false;
           thh::handle_t ancestor = entity.parent_;
           std::vector<thh::handle_t> ancestor_neighbors =
-            interaction.neighbors_;
+            interaction.siblings_;
           while (!next && ancestor != thh::handle_t()) {
             entities.call(ancestor, [&](const auto& parent) {
               bool has_grandparent = false;
@@ -99,9 +99,9 @@ namespace hy {
                 ancestor = parent.parent_;
               } else {
                 interaction.element_ = element;
-                interaction.neighbors_ = ancestor_neighbors;
+                interaction.siblings_ = ancestor_neighbors;
                 interaction.selected_ =
-                  interaction.neighbors_[interaction.element_];
+                  interaction.siblings_[interaction.element_];
                 next = true;
               }
             });
@@ -109,7 +109,7 @@ namespace hy {
         });
       } else {
         interaction.element_ = next_element;
-        interaction.selected_ = interaction.neighbors_[interaction.element_];
+        interaction.selected_ = interaction.siblings_[interaction.element_];
       }
     };
 
@@ -119,7 +119,7 @@ namespace hy {
       } else {
         entities.call(interaction.selected_, [&](const auto& entity) {
           interaction.selected_ = entity.children_.front();
-          interaction.neighbors_ = entity.children_;
+          interaction.siblings_ = entity.children_;
           interaction.element_ = 0;
         });
       }
@@ -279,7 +279,7 @@ namespace demo {
             std::string("entity_") + std::to_string(next_handle.id_);
         });
         hy::add_children(
-          interaction.neighbors_[interaction.element_], {next_handle},
+          interaction.siblings_[interaction.element_], {next_handle},
           entities);
       } break;
       default:
