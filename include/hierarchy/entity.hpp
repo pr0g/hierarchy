@@ -15,38 +15,10 @@ namespace hy {
     thh::handle_t parent_;
   };
 
-  inline void add_children(
-    const thh::handle_t entity_handle,
+  void add_children(
+    thh::handle_t entity_handle,
     const std::vector<thh::handle_t>& child_handles,
-    thh::container_t<entity_t>& entities) {
-    entities.call(entity_handle, [&child_handles](auto& entity) {
-      entity.children_.insert(
-        entity.children_.end(), child_handles.begin(), child_handles.end());
-    });
-    std::for_each(
-      child_handles.begin(), child_handles.end(),
-      [&entities, entity_handle](const auto child_handle) {
-        entities.call(child_handle, [entity_handle](auto& entity) {
-          entity.parent_ = entity_handle;
-        });
-      });
-  }
-
-  inline std::vector<thh::handle_t> siblings(
-    thh::handle_t entity_handle, const thh::container_t<entity_t>& entities,
-    const std::vector<thh::handle_t>& root_handles) {
-    return entities
-      .call_return(
-        entity_handle,
-        [&](const entity_t& entity) {
-          return entities
-            .call_return(
-              entity.parent_,
-              [](const entity_t& parent) { return parent.children_; })
-            .value_or(root_handles);
-        })
-      .value_or(std::vector<thh::handle_t>{});
-  }
+    thh::container_t<entity_t>& entities);
 
   struct interaction_t {
     int element_ = 0;
@@ -71,6 +43,13 @@ namespace hy {
   void expand(interaction_t& interaction);
   void collapse(
     interaction_t& interaction, const thh::container_t<hy::entity_t>& entities);
+
+  std::vector<thh::handle_t> siblings(
+    thh::handle_t entity_handle, const thh::container_t<entity_t>& entities,
+    const std::vector<thh::handle_t>& root_handles);
+
+  bool has_children(
+    thh::handle_t handle, const thh::container_t<hy::entity_t>& entities);
 
   // info required when displaying each element
   struct display_info_t {

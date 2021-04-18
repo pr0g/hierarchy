@@ -4,16 +4,48 @@
 #include <numeric>
 
 namespace hy {
-  namespace {
-    bool has_children(
-      const thh::handle_t handle,
-      const thh::container_t<hy::entity_t>& entities) {
-      return entities
-        .call_return(
-          handle, [&](const auto& entity) { return !entity.children_.empty(); })
-        .value_or(false);
-    }
-  } // namespace
+  bool has_children(
+    const thh::handle_t handle,
+    const thh::container_t<hy::entity_t>& entities) {
+    return entities
+      .call_return(
+        handle, [&](const auto& entity) { return !entity.children_.empty(); })
+      .value_or(false);
+  }
+
+  std::vector<thh::handle_t> siblings(
+    const thh::handle_t entity_handle,
+    const thh::container_t<entity_t>& entities,
+    const std::vector<thh::handle_t>& root_handles) {
+    return entities
+      .call_return(
+        entity_handle,
+        [&](const entity_t& entity) {
+          return entities
+            .call_return(
+              entity.parent_,
+              [](const entity_t& parent) { return parent.children_; })
+            .value_or(root_handles);
+        })
+      .value_or(std::vector<thh::handle_t>{});
+  }
+
+  void add_children(
+    const thh::handle_t entity_handle,
+    const std::vector<thh::handle_t>& child_handles,
+    thh::container_t<entity_t>& entities) {
+    entities.call(entity_handle, [&child_handles](auto& entity) {
+      entity.children_.insert(
+        entity.children_.end(), child_handles.begin(), child_handles.end());
+    });
+    std::for_each(
+      child_handles.begin(), child_handles.end(),
+      [&entities, entity_handle](const auto child_handle) {
+        entities.call(child_handle, [entity_handle](auto& entity) {
+          entity.parent_ = entity_handle;
+        });
+      });
+  }
 
   void move_up(
     interaction_t& interaction, const thh::container_t<hy::entity_t>& entities,
@@ -269,13 +301,16 @@ namespace demo {
         hy::collapse(interaction, entities);
         break;
       case input_e::add_child: {
-        auto next_handle = entities.add();
-        entities.call(next_handle, [next_handle](auto& entity) {
-          entity.name_ =
-            std::string("entity_") + std::to_string(next_handle.id_);
-        });
-        hy::add_children(
-          interaction.siblings_[interaction.element_], {next_handle}, entities);
+        if (!interaction.is_collapsed(interaction.selected_)) {
+          auto next_handle = entities.add();
+          entities.call(next_handle, [next_handle](auto& entity) {
+            entity.name_ =
+              std::string("entity_") + std::to_string(next_handle.id_);
+          });
+          hy::add_children(
+            interaction.siblings_[interaction.element_], {next_handle},
+            entities);
+        }
       } break;
       default:
         break;
