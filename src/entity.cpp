@@ -8,11 +8,10 @@ namespace hy {
     bool has_children(
       const thh::handle_t handle,
       const thh::container_t<hy::entity_t>& entities) {
-      bool children = false;
-      entities.call(handle, [&](const auto& entity) {
-        children = !entity.children_.empty();
-      });
-      return children;
+      return entities
+        .call_return(
+          handle, [&](const auto& entity) { return !entity.children_.empty(); })
+        .value_or(false);
     }
   } // namespace
 
