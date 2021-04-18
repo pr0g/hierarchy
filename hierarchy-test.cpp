@@ -11,7 +11,7 @@ namespace thh {
   }
 
   doctest::String toString(const std::vector<thh::handle_t>& handles) {
-    return [&, str = doctest::String()] () mutable {
+    return [&, str = doctest::String()]() mutable {
       str += "{";
       std::for_each(handles.begin(), handles.end() - 1, [&](const auto handle) {
         str += toString(handle);
@@ -206,5 +206,37 @@ TEST_CASE("Hierarchy Traversal") {
     CHECK(
       interaction.siblings_
       == hy::siblings(interaction.selected_, entities, root_handles));
+  }
+
+  SUBCASE("move_up on expanded sibling goes to sibling with collapsed child") {
+    interaction.element_ = 1;
+    interaction.selected_ = thh::handle_t(7, 0);
+    interaction.siblings_ =
+      hy::siblings(interaction.selected_, entities, root_handles);
+    interaction.collapsed_.push_back(thh::handle_t(2, 0));
+
+    demo::process_input(
+      demo::input_e::move_up, entities, root_handles, interaction);
+
+    CHECK(interaction.selected_ == thh::handle_t(2, 0));
+    CHECK(interaction.element_ == 1);
+    CHECK(
+      interaction.siblings_
+      == hy::siblings(interaction.selected_, entities, root_handles));
+  }
+
+  SUBCASE("move_down on collapsed element goes to next sibling") {
+    interaction.element_ = 0;
+    interaction.selected_ = thh::handle_t(0, 0);
+    interaction.siblings_ =
+      hy::siblings(interaction.selected_, entities, root_handles);
+    interaction.collapsed_.push_back(thh::handle_t(0, 0));
+
+    demo::process_input(
+      demo::input_e::move_down, entities, root_handles, interaction);
+
+    CHECK(interaction.selected_ == thh::handle_t(7, 0));
+    CHECK(interaction.element_ == 1);
+    CHECK(interaction.siblings_ == root_handles);
   }
 }
