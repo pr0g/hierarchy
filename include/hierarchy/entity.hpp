@@ -22,15 +22,20 @@ namespace hy {
 
   struct interaction_t {
     int element_ = 0;
-    std::vector<thh::handle_t> siblings_;
-
     thh::handle_t selected_;
+    std::vector<thh::handle_t> siblings_;
     std::vector<thh::handle_t> collapsed_;
 
     bool is_collapsed(const thh::handle_t handle) const {
       return std::find(collapsed_.begin(), collapsed_.end(), handle)
           != collapsed_.end();
     }
+  };
+
+  struct model_t {
+    thh::container_t<entity_t> entities_;
+    std::vector<thh::handle_t> root_;
+    interaction_t interaction_;
   };
 
   void move_up(
