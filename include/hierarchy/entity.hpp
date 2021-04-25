@@ -21,7 +21,7 @@ namespace hy {
     thh::container_t<entity_t>& entities);
 
   struct interaction_t {
-    int element_ = 0;
+    int element_ = -1;
     thh::handle_t selected_;
     std::vector<thh::handle_t> siblings_;
     std::vector<thh::handle_t> collapsed_;
