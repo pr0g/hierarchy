@@ -20,16 +20,71 @@ namespace hy {
     const std::vector<thh::handle_t>& child_handles,
     thh::container_t<entity_t>& entities);
 
-  struct interaction_t {
-    int element_ = -1;
-    thh::handle_t selected_;
-    std::vector<thh::handle_t> siblings_;
-    std::vector<thh::handle_t> collapsed_;
+  std::vector<thh::handle_t> siblings(
+    thh::handle_t entity_handle, const thh::container_t<entity_t>& entities,
+    const std::vector<thh::handle_t>& root_handles);
 
+  bool has_children(
+    thh::handle_t handle, const thh::container_t<hy::entity_t>& entities);
+
+  struct interaction_t {
     bool is_collapsed(const thh::handle_t handle) const {
       return std::find(collapsed_.begin(), collapsed_.end(), handle)
           != collapsed_.end();
     }
+
+    void select(
+      const thh::handle_t entity_handle,
+      const thh::container_t<entity_t>& entities,
+      const std::vector<thh::handle_t>& root_handles) {
+      if (entity_handle != thh::handle_t()) {
+        selected_ = entity_handle;
+        siblings_ = hy::siblings(entity_handle, entities, root_handles);
+      }
+    }
+
+    void expand(const thh::handle_t entity_handle) {
+      if (is_collapsed(entity_handle)) {
+        collapsed_.erase(
+          std::remove(collapsed_.begin(), collapsed_.end(), entity_handle),
+          collapsed_.end());
+      }
+    }
+
+    void collapse(
+      const thh::handle_t entity_handle,
+      const thh::container_t<hy::entity_t>& entities) {
+      if (
+        !is_collapsed(entity_handle) && has_children(entity_handle, entities)) {
+        collapsed_.push_back(entity_handle);
+      }
+    }
+
+    void expand_selected() { expand(selected_); }
+
+    void collapse_selected(const thh::container_t<hy::entity_t>& entities) {
+      collapse(selected_, entities);
+    }
+
+    thh::handle_t selected() const { return selected_; }
+    int element() const {
+      return std::find(siblings_.begin(), siblings_.end(), selected_)
+           - siblings_.begin();
+    }
+
+    void move_down(
+      const thh::container_t<hy::entity_t>& entities,
+      const std::vector<thh::handle_t>& root_handles);
+    void move_up(
+      const thh::container_t<hy::entity_t>& entities,
+      const std::vector<thh::handle_t>& root_handles);
+
+    const std::vector<thh::handle_t>& siblings() const { return siblings_; }
+
+  private:
+    thh::handle_t selected_;
+    std::vector<thh::handle_t> siblings_;
+    std::vector<thh::handle_t> collapsed_;
   };
 
   struct model_t {
@@ -37,24 +92,6 @@ namespace hy {
     std::vector<thh::handle_t> root_;
     interaction_t interaction_;
   };
-
-  void move_up(
-    interaction_t& interaction, const thh::container_t<hy::entity_t>& entities,
-    const std::vector<thh::handle_t>& root_handles);
-  void move_down(
-    interaction_t& interaction, const thh::container_t<hy::entity_t>& entities,
-    const std::vector<thh::handle_t>& root_handles);
-
-  void expand(interaction_t& interaction);
-  void collapse(
-    interaction_t& interaction, const thh::container_t<hy::entity_t>& entities);
-
-  std::vector<thh::handle_t> siblings(
-    thh::handle_t entity_handle, const thh::container_t<entity_t>& entities,
-    const std::vector<thh::handle_t>& root_handles);
-
-  bool has_children(
-    thh::handle_t handle, const thh::container_t<hy::entity_t>& entities);
 
   // info required when displaying each element
   struct display_info_t {

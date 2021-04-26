@@ -22,8 +22,7 @@ int main(int argc, char** argv) {
   curs_set(0); // hide cursor
 
   hy::interaction_t interaction;
-  interaction.selected_ = root_handles.front();
-  interaction.siblings_ = root_handles;
+  interaction.select(root_handles.front(), entities, root_handles);
 
   const auto display_name = [](const hy::display_info_t& di) {
     mvprintw(
