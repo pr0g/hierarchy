@@ -28,50 +28,22 @@ namespace hy {
     thh::handle_t handle, const thh::container_t<hy::entity_t>& entities);
 
   struct interaction_t {
-    bool is_collapsed(const thh::handle_t handle) const {
-      return std::find(collapsed_.begin(), collapsed_.end(), handle)
-          != collapsed_.end();
-    }
+    bool is_collapsed(thh::handle_t handle) const;
 
     void select(
-      const thh::handle_t entity_handle,
+      thh::handle_t entity_handle,
       const thh::container_t<entity_t>& entities,
-      const std::vector<thh::handle_t>& root_handles) {
-      if (entity_handle != thh::handle_t()) {
-        selected_ = entity_handle;
-        siblings_ = hy::siblings(entity_handle, entities, root_handles);
-      }
-    }
+      const std::vector<thh::handle_t>& root_handles);
 
-    void expand(const thh::handle_t entity_handle) {
-      if (is_collapsed(entity_handle)) {
-        collapsed_.erase(
-          std::remove(collapsed_.begin(), collapsed_.end(), entity_handle),
-          collapsed_.end());
-      }
-    }
-
+    void deselect();
+    void expand(thh::handle_t entity_handle);
     void collapse(
-      const thh::handle_t entity_handle,
-      const thh::container_t<hy::entity_t>& entities) {
-      if (
-        !is_collapsed(entity_handle) && has_children(entity_handle, entities)) {
-        collapsed_.push_back(entity_handle);
-      }
-    }
-
-    void expand_selected() { expand(selected_); }
-
-    void collapse_selected(const thh::container_t<hy::entity_t>& entities) {
-      collapse(selected_, entities);
-    }
-
+      thh::handle_t entity_handle,
+      const thh::container_t<hy::entity_t>& entities);
+    void expand_selected();
+    void collapse_selected(const thh::container_t<hy::entity_t>& entities);
     thh::handle_t selected() const { return selected_; }
-    int element() const {
-      return std::find(siblings_.begin(), siblings_.end(), selected_)
-           - siblings_.begin();
-    }
-
+    int element() const;
     void move_down(
       const thh::container_t<hy::entity_t>& entities,
       const std::vector<thh::handle_t>& root_handles);
