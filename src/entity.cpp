@@ -83,13 +83,6 @@ namespace hy {
     }
   }
 
-  void interaction_t::expand_selected() { expand(selected_); }
-
-  void interaction_t::collapse_selected(
-    const thh::container_t<hy::entity_t>& entities) {
-    collapse(selected_, entities);
-  }
-
   int interaction_t::element() const {
     return std::find(siblings_.begin(), siblings_.end(), selected_)
          - siblings_.begin();
@@ -303,10 +296,10 @@ namespace demo {
         interaction.move_down(entities, root_handles);
         break;
       case input_e::expand:
-        interaction.expand_selected();
+        interaction.expand(interaction.selected());
         break;
       case input_e::collapse:
-        interaction.collapse_selected(entities);
+        interaction.collapse(interaction.selected(), entities);
         break;
       case input_e::add_child: {
         if (!interaction.is_collapsed(interaction.selected())) {

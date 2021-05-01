@@ -40,8 +40,6 @@ namespace hy {
     void collapse(
       thh::handle_t entity_handle,
       const thh::container_t<hy::entity_t>& entities);
-    void expand_selected();
-    void collapse_selected(const thh::container_t<hy::entity_t>& entities);
     thh::handle_t selected() const { return selected_; }
     int element() const;
     void move_down(
