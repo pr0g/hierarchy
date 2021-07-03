@@ -26,6 +26,11 @@ if (${HIERARCHY_DEMO})
     find_package(Curses)
     target_sources(${PROJECT_NAME}-demo PRIVATE main-macos.cpp)
     target_link_libraries(${PROJECT_NAME}-demo PRIVATE Curses ${PROJECT_NAME})
+
+    add_executable(scroll-demo)
+    target_sources(scroll-demo PRIVATE main-scroll-macos.cpp)
+    target_link_libraries(scroll-demo PRIVATE Curses)
+    target_compile_features(scroll-demo PRIVATE cxx_std_17)
   endif()
 
   if (${CMAKE_HOST_WIN32})
