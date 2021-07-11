@@ -47,7 +47,7 @@ namespace hy {
       });
   }
 
-  bool interaction_t::is_collapsed(const thh::handle_t handle) const {
+  bool interaction_t::collapsed(const thh::handle_t handle) const {
     return std::find(collapsed_.begin(), collapsed_.end(), handle)
         != collapsed_.end();
   }
@@ -68,7 +68,7 @@ namespace hy {
   }
 
   void interaction_t::expand(const thh::handle_t entity_handle) {
-    if (is_collapsed(entity_handle)) {
+    if (collapsed(entity_handle)) {
       collapsed_.erase(
         std::remove(collapsed_.begin(), collapsed_.end(), entity_handle),
         collapsed_.end());
@@ -78,7 +78,7 @@ namespace hy {
   void interaction_t::collapse(
     const thh::handle_t entity_handle,
     const thh::container_t<hy::entity_t>& entities) {
-    if (!is_collapsed(entity_handle) && has_children(entity_handle, entities)) {
+    if (!collapsed(entity_handle) && has_children(entity_handle, entities)) {
       collapsed_.push_back(entity_handle);
     }
   }
@@ -94,7 +94,7 @@ namespace hy {
     if (const auto location = element(); location != 0) {
       auto next_root = siblings_[location - 1];
       bool descended = false;
-      while (has_children(next_root, entities) && !is_collapsed(next_root)) {
+      while (has_children(next_root, entities) && !collapsed(next_root)) {
         entities.call(next_root, [&](const auto& entity) {
           next_root = entity.children_.back();
           descended = true;
@@ -164,7 +164,7 @@ namespace hy {
     };
 
     if (has_children(selected(), entities)) {
-      if (is_collapsed(selected())) {
+      if (collapsed(selected())) {
         next_sibling();
       } else {
         entities.call(selected(), [&](const auto& entity) {
@@ -177,26 +177,129 @@ namespace hy {
     }
   }
 
-  void display_hierarchy(
+  // visible count
+  void expanded_count(
+    const thh::handle_t& entity_handle,
     const thh::container_t<hy::entity_t>& entities,
+    const interaction_t& interaction, int& count) {
+    count++;
+    if (!interaction.collapsed(entity_handle)) {
+      entities.call(entity_handle, [&](const auto& entity) {
+        const auto& children = entity.children_;
+        for (const auto& child_entity_handle : children) {
+          expanded_count(child_entity_handle, entities, interaction, count);
+        }
+      });
+    }
+  }
+
+  int expanded_count(
+    const thh::handle_t& entity_handle,
+    const thh::container_t<hy::entity_t>& entities,
+    const interaction_t& interaction) {
+    int count = 0;
+    if (!interaction.collapsed(entity_handle)) {
+      entities.call(entity_handle, [&](const auto& entity) {
+        const auto& children = entity.children_;
+        for (const auto& child_entity_handle : children) {
+          count += expanded_count(child_entity_handle, entities, interaction);
+        }
+      });
+    }
+    return count + 1;
+  }
+
+  int expanded_count_again(
+    const thh::handle_t& entity_handle,
+    const thh::container_t<hy::entity_t>& entities,
+    const interaction_t& interaction) {
+    std::vector<thh::handle_t> handles(1, entity_handle);
+    int count = 1;
+    while (!handles.empty()) {
+      auto handle = handles.back();
+      handles.pop_back();
+      if (!interaction.collapsed(handle)) {
+        entities.call(handle, [&](const auto& entity) {
+          count += entity.children_.size();
+          handles.insert(
+            handles.end(), entity.children_.begin(), entity.children_.end());
+        });
+      }
+    }
+    return count;
+  }
+
+  struct indent_tracker_t {
+    int indent_ = 0;
+    int count_ = 0;
+  };
+
+  std::vector<handle_flattened> build_vector(
+    const thh::container_t<hy::entity_t>& entities, const hy::view_t& view,
+    const interaction_t& interaction,
+    const std::vector<thh::handle_t>& root_handles) {
+    std::vector<handle_flattened> flattened;
+    for (const auto root_handle : root_handles) {
+      std::deque<indent_tracker_t> indent_tracker;
+      std::vector<thh::handle_t> handles(1, root_handle);
+      while (!handles.empty()) {
+        const auto curr_indent =
+          indent_tracker.empty() ? 0 : indent_tracker.front().indent_;
+
+        if (!indent_tracker.empty()) {
+          auto& indent_ref = indent_tracker.front();
+          indent_ref.count_--;
+          if (indent_ref.count_ == 0) {
+            indent_tracker.pop_front();
+          }
+        }
+
+        auto handle = handles.back();
+        flattened.push_back(handle_flattened{handle, curr_indent});
+        handles.pop_back();
+        entities.call(handle, [&](const auto& entity) {
+          if (!entity.children_.empty() && !interaction.collapsed(handle)) {
+            indent_tracker.push_front(
+              indent_tracker_t{curr_indent + 1, (int)entity.children_.size()});
+            handles.insert(
+              handles.end(), entity.children_.rbegin(),
+              entity.children_.rend());
+          }
+        });
+      }
+    }
+    return flattened;
+  }
+
+  void display_hierarchy(
+    const thh::container_t<hy::entity_t>& entities, const view_t& view,
     const interaction_t& interaction,
     const std::vector<thh::handle_t>& root_handles, const display_fn& display,
     const scope_exit_fn& scope_exit,
     const display_connection_fn& display_connection) {
     std::deque<thh::handle_t> entity_handle_stack;
-    for (auto it = root_handles.rbegin(); it != root_handles.rend(); ++it) {
-      entity_handle_stack.push_front(*it);
-    }
 
-    struct indent_tracker_t {
-      int indent_ = 0;
-      int count_ = 0;
-    };
+    // int visible_count = 0;
+    for (auto it = root_handles.begin(); it != root_handles.end(); ++it) {
+      // for (auto it = root_handles.rbegin(); it != root_handles.rend();
+      // ++it)
+      // {
+      // visible_count += expanded_count(*it, entities, interaction,
+      // visible_count);
+      // printf("%d\n", visible_count);
+      // if (visible_count < view.offset) {
+      entity_handle_stack.push_front(*it);
+      //}
+      // if (visible_count >= view.count) {
+      //  break;
+      //}
+    }
 
     std::deque<indent_tracker_t> indent_tracker;
     indent_tracker.push_front(
       indent_tracker_t{0, (int)entity_handle_stack.size()});
 
+    // set level to view offset?
     int level = 0; // the level (row) in the hierarchy
     int last_indent = 0; // most recent indent (col)
     while (!entity_handle_stack.empty()) {
@@ -224,8 +327,11 @@ namespace hy {
         }
       }
 
-      const auto entity_handle = entity_handle_stack.front();
-      entity_handle_stack.pop_front();
+      const auto entity_handle = entity_handle_stack.back();
+      entity_handle_stack.pop_back();
+
+      // const auto entity_handle = entity_handle_stack.front();
+      // entity_handle_stack.pop_front();
 
       entities.call(entity_handle, [&](const auto& entity) {
         const auto& children = entity.children_;
@@ -236,22 +342,26 @@ namespace hy {
         display_info.entity_handle = entity_handle;
         display_info.selected = interaction.selected() == entity_handle;
         display_info.collapsed =
-          interaction.is_collapsed(entity_handle) && !children.empty();
+          interaction.collapsed(entity_handle) && !children.empty();
         display_info.has_children = !children.empty();
         display_info.name = entity.name_;
         display_info.last = last_element;
 
         display(display_info);
 
-        if (!children.empty() && !interaction.is_collapsed(entity_handle)) {
+        if (!children.empty() && !interaction.collapsed(entity_handle)) {
           indent_tracker.push_front(
             indent_tracker_t{curr_indent + 1, (int)children.size()});
           for (auto it = children.rbegin(); it != children.rend(); ++it) {
-            entity_handle_stack.push_front(*it);
+            entity_handle_stack.push_back(*it);
+            // entity_handle_stack.push_front(*it);
           }
         }
       });
       level++;
+      // if (level >= view.count) {
+      //  break;
+      //}
       last_indent = curr_indent;
     }
 
@@ -284,6 +394,24 @@ namespace demo {
     return {handles[0], handles[7], handles[8]};
   }
 
+  std::vector<thh::handle_t> create_bench_entities(
+    thh::container_t<hy::entity_t>& entities) {
+    using namespace std::string_literals;
+    const int64_t handle_count = 1000000;
+    std::vector<thh::handle_t> handles;
+    handles.reserve(handle_count);
+    for (int64_t i = 0; i < handle_count; i++) {
+      auto handle = entities.add("entity_"s + std::to_string(i));
+      handles.push_back(handle);
+    }
+
+    for (int64_t i = 0; i < handle_count - 1; ++i) {
+      hy::add_children(handles[i], {handles[i + 1]}, entities);
+    }
+
+    return {handles[0]};
+  }
+
   void process_input(
     const input_e input, thh::container_t<hy::entity_t>& entities,
     const std::vector<thh::handle_t>& root_handles,
@@ -302,7 +430,7 @@ namespace demo {
         interaction.collapse(interaction.selected(), entities);
         break;
       case input_e::add_child: {
-        if (!interaction.is_collapsed(interaction.selected())) {
+        if (!interaction.collapsed(interaction.selected())) {
           auto next_handle = entities.add();
           entities.call(next_handle, [next_handle](auto& entity) {
             entity.name_ =

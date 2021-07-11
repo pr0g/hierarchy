@@ -22,13 +22,13 @@ int main(int argc, char** argv) {
   };
 
   std::vector<entity_t> entities;
-  std::generate_n(std::back_inserter(entities), 20, [number = 1]() mutable {
+  std::generate_n(std::back_inserter(entities), 60, [number = 1]() mutable {
     return entity_t{std::string("entity_") + std::to_string(number++)};
   });
 
   struct view_t {
     int offset = 0;
-    int count = 30;
+    int count = 20;
   };
 
   view_t view;

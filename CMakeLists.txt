@@ -18,6 +18,7 @@ target_link_libraries(
 
 option(HIERARCHY_DEMO "Builds simple terminal example of hierarchy" OFF)
 option(HIERARCHY_TEST "Builds unit tests for hierarchy library" OFF)
+option(HIERARCHY_BENCH "Builds benchmarks for hierarchy library" OFF)
 
 if (${HIERARCHY_DEMO})
   add_executable(${PROJECT_NAME}-demo)
@@ -53,4 +54,15 @@ if (${HIERARCHY_TEST})
     GIT_TAG f0ab4e793fa863d4a5929ff263ddd3bebec8767e)
   FetchContent_MakeAvailable(doctest)
   target_link_libraries(${PROJECT_NAME}-test PRIVATE ${PROJECT_NAME} doctest)
+endif()
+
+if (${HIERARCHY_BENCH})
+  set(BENCHMARK_ENABLE_TESTING OFF)
+  FetchContent_Declare(
+    benchmark
+    GIT_REPOSITORY https://github.com/google/benchmark.git)
+  FetchContent_MakeAvailable(benchmark)
+  add_executable(${PROJECT_NAME}-bench)
+  target_sources(${PROJECT_NAME}-bench PRIVATE ${PROJECT_NAME}-bench.cpp)
+  target_link_libraries(${PROJECT_NAME}-bench ${PROJECT_NAME} benchmark)
 endif()

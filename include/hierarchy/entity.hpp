@@ -28,11 +28,10 @@ namespace hy {
     thh::handle_t handle, const thh::container_t<hy::entity_t>& entities);
 
   struct interaction_t {
-    bool is_collapsed(thh::handle_t handle) const;
+    bool collapsed(thh::handle_t handle) const;
 
     void select(
-      thh::handle_t entity_handle,
-      const thh::container_t<entity_t>& entities,
+      thh::handle_t entity_handle, const thh::container_t<entity_t>& entities,
       const std::vector<thh::handle_t>& root_handles);
 
     void deselect();
@@ -56,6 +55,37 @@ namespace hy {
     std::vector<thh::handle_t> siblings_;
     std::vector<thh::handle_t> collapsed_;
   };
+
+  void expanded_count(
+    const thh::handle_t& entity_handle,
+    const thh::container_t<hy::entity_t>& entities,
+    const interaction_t& interaction, int& count);
+
+  int expanded_count(
+    const thh::handle_t& entity_handle,
+    const thh::container_t<hy::entity_t>& entities,
+    const interaction_t& interaction);
+
+  int expanded_count_again(
+    const thh::handle_t& entity_handle,
+    const thh::container_t<hy::entity_t>& entities,
+    const interaction_t& interaction);
+
+  // view into the collection of entities
+  struct view_t {
+    int offset = 0;
+    int count = 20;
+  };
+
+  struct handle_flattened {
+    thh::handle_t entity_handle_;
+    int32_t indent_;
+  };
+
+  std::vector<handle_flattened> build_vector(
+    const thh::container_t<hy::entity_t>& entities, const hy::view_t& view,
+    const interaction_t& interaction,
+    const std::vector<thh::handle_t>& root_handles);
 
   struct model_t {
     thh::container_t<entity_t> entities_;
@@ -81,7 +111,7 @@ namespace hy {
   using display_connection_fn = std::function<void(int, int)>;
 
   void display_hierarchy(
-    const thh::container_t<hy::entity_t>& entities,
+    const thh::container_t<hy::entity_t>& entities, const view_t& view,
     const interaction_t& interaction,
     const std::vector<thh::handle_t>& root_handles, const display_fn& display,
     const scope_exit_fn& scope_exit,
@@ -90,6 +120,9 @@ namespace hy {
 
 namespace demo {
   std::vector<thh::handle_t> create_sample_entities(
+    thh::container_t<hy::entity_t>& entities);
+
+  std::vector<thh::handle_t> create_bench_entities(
     thh::container_t<hy::entity_t>& entities);
 
   enum class input_e { move_up, move_down, expand, collapse, add_child };

@@ -201,4 +201,31 @@ TEST_CASE("Hierarchy Traversal") {
     CHECK(interaction.element() == 1);
     CHECK(interaction.siblings() == root_handles);
   }
+
+  SUBCASE("display") {
+    interaction.select(root_handles.front(), entities, root_handles);
+
+    hy::view_t view;
+    view.count = 12;
+    view.offset = 6;
+
+    const auto display_name = [](const hy::display_info_t& di) {};
+
+    int count = 0;
+    hy::expanded_count(root_handles[0], entities, interaction, count);
+    printf("%d\n", count);
+
+    int count2 = hy::expanded_count(root_handles[0], entities, interaction);
+    printf("%d\n", count2);
+
+    int count3 =
+      hy::expanded_count_again(root_handles[0], entities, interaction);
+    printf("%d\n", count3);
+
+    auto v = hy::build_vector(entities, view, interaction, root_handles);
+
+    hy::display_hierarchy(
+      entities, view, interaction, root_handles, display_name, [] {},
+      [](int, int) {});
+  }
 }
