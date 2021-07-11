@@ -48,7 +48,8 @@ int main(int argc, char** argv) {
   hy::view_t view;
   view.offset = 0;
   view.count = 7;
-  // selected index too?
+
+  int selected = 0;
 
   // builds everything
   const auto flattened =
@@ -60,11 +61,15 @@ int main(int argc, char** argv) {
     const int count = std::min((int)entities.size(), view.offset + view.count);
     for (int entity_index = view.offset; entity_index < count; ++entity_index) {
       const auto& flatten = flattened[entity_index];
+      if (entity_index == selected) {
+        attron(A_REVERSE);
+      }
       entities.call(flatten.entity_handle_, [&](const auto& entity) {
         mvprintw(
           entity_index - view.offset, flatten.indent_ * 4,
           entity.name_.c_str());
       });
+      attroff(A_REVERSE);
     }
 
     // int i = 0;
@@ -85,11 +90,17 @@ int main(int argc, char** argv) {
 
     switch (int key = getch(); key) {
       case KEY_UP:
-        view.offset = std::max(view.offset - 1, 0);
+        selected = std::max(selected - 1, 0);
+        if (selected - view.offset + 1 == 0) {
+          view.offset = std::max(view.offset - 1, 0);
+        }
         break;
       case KEY_DOWN: {
         int temp = std::max((int)entities.size() - view.count, 0);
-        view.offset = std::min(view.offset + 1, temp);
+        selected = std::min(selected + 1, (int)entities.size() - 1);
+        if (selected - view.count - view.offset == 0) {
+          view.offset = std::min(view.offset + 1, temp);
+        }
       } break;
       default:
         // noop

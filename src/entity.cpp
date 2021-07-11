@@ -234,39 +234,45 @@ namespace hy {
     int count_ = 0;
   };
 
+  static void build_hierarchy_single(
+    const thh::handle_t entity_handle, const int starting_indent,
+    std::vector<handle_flattened>& flattened,
+    const thh::container_t<hy::entity_t>& entities,
+    const interaction_t& interaction) {
+    std::deque<indent_tracker_t> indent_tracker(1, {starting_indent, 1});
+    std::vector<thh::handle_t> handles(1, entity_handle);
+    while (!handles.empty()) {
+      const auto curr_indent = indent_tracker.front().indent_;
+
+      if (!indent_tracker.empty()) {
+        auto& indent_ref = indent_tracker.front();
+        indent_ref.count_--;
+        if (indent_ref.count_ == 0) {
+          indent_tracker.pop_front();
+        }
+      }
+
+      auto handle = handles.back();
+      flattened.push_back(handle_flattened{handle, curr_indent});
+      handles.pop_back();
+      entities.call(handle, [&](const auto& entity) {
+        if (!entity.children_.empty() && !interaction.collapsed(handle)) {
+          indent_tracker.push_front(
+            indent_tracker_t{curr_indent + 1, (int)entity.children_.size()});
+          handles.insert(
+            handles.end(), entity.children_.rbegin(), entity.children_.rend());
+        }
+      });
+    }
+  }
+
   std::vector<handle_flattened> build_vector(
     const thh::container_t<hy::entity_t>& entities, const hy::view_t& view,
     const interaction_t& interaction,
     const std::vector<thh::handle_t>& root_handles) {
     std::vector<handle_flattened> flattened;
     for (const auto root_handle : root_handles) {
-      std::deque<indent_tracker_t> indent_tracker;
-      std::vector<thh::handle_t> handles(1, root_handle);
-      while (!handles.empty()) {
-        const auto curr_indent =
-          indent_tracker.empty() ? 0 : indent_tracker.front().indent_;
-
-        if (!indent_tracker.empty()) {
-          auto& indent_ref = indent_tracker.front();
-          indent_ref.count_--;
-          if (indent_ref.count_ == 0) {
-            indent_tracker.pop_front();
-          }
-        }
-
-        auto handle = handles.back();
-        flattened.push_back(handle_flattened{handle, curr_indent});
-        handles.pop_back();
-        entities.call(handle, [&](const auto& entity) {
-          if (!entity.children_.empty() && !interaction.collapsed(handle)) {
-            indent_tracker.push_front(
-              indent_tracker_t{curr_indent + 1, (int)entity.children_.size()});
-            handles.insert(
-              handles.end(), entity.children_.rbegin(),
-              entity.children_.rend());
-          }
-        });
-      }
+      build_hierarchy_single(root_handle, 0, flattened, entities, interaction);
     }
     return flattened;
   }
