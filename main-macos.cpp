@@ -10,8 +10,8 @@
 
 int main(int argc, char** argv) {
   thh::container_t<hy::entity_t> entities;
-  auto root_handles = demo::create_sample_entities(entities);
-  // auto root_handles = demo::create_bench_entities(entities);
+  // auto root_handles = demo::create_sample_entities(entities);
+  auto root_handles = demo::create_bench_entities(entities);
 
   // enable support for unicode characters
   setlocale(LC_CTYPE, "");
@@ -75,13 +75,6 @@ int main(int argc, char** argv) {
       attroff(A_BOLD);
     }
 
-    // int i = 0;
-    // for (const auto& flatten : flattened) {
-    //   entities.call(flatten.entity_handle_, [&](const auto& entity) {
-    //     mvprintw(i++, flatten.indent_ * 4, "%s", entity.name_.c_str());
-    //   });
-    // }
-
     // hy::display_hierarchy(
     //   entities, view, interaction, root_handles, display_name, [] {},
     //   display_connection);
@@ -107,7 +100,7 @@ int main(int argc, char** argv) {
       } break;
       case KEY_LEFT: {
         const auto entity_handle = flattened[selected].entity_handle_;
-        int count = hy::expanded_count(entity_handle, entities, interaction);
+        int count = hy::expanded_count_again(entity_handle, entities, interaction);
         interaction.collapse(entity_handle, entities);
         flattened.erase(
           flattened.begin() + 1 + selected,

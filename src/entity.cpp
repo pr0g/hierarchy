@@ -405,19 +405,24 @@ namespace demo {
   std::vector<thh::handle_t> create_bench_entities(
     thh::container_t<hy::entity_t>& entities) {
     using namespace std::string_literals;
-    const int64_t handle_count = 1000000;
-    std::vector<thh::handle_t> handles;
-    handles.reserve(handle_count);
-    for (int64_t i = 0; i < handle_count; i++) {
-      auto handle = entities.add("entity_"s + std::to_string(i));
-      handles.push_back(handle);
+    std::vector<thh::handle_t> roots;
+    for (int64_t r = 0; r < 5; r++) {
+      const int64_t handle_count = 1000000;
+      std::vector<thh::handle_t> handles;
+      handles.reserve(handle_count);
+      for (int64_t i = 0; i < handle_count; i++) {
+        auto handle = entities.add("entity_"s + std::to_string(i));
+        handles.push_back(handle);
+      }
+
+      for (int64_t i = 0; i < handle_count - 1; ++i) {
+        hy::add_children(handles[i], {handles[i + 1]}, entities);
+      }
+
+      roots.push_back(handles[0]);
     }
 
-    for (int64_t i = 0; i < handle_count - 1; ++i) {
-      hy::add_children(handles[i], {handles[i + 1]}, entities);
-    }
-
-    return {handles[0]};
+    return roots;
   }
 
   void process_input(

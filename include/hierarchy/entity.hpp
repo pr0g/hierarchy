@@ -82,6 +82,10 @@ namespace hy {
     int32_t indent_;
   };
 
+  // go_to_entity
+  // find_root
+    // record path back to root (expand all)
+
   std::vector<handle_flattened> build_hierarchy_single(
     const thh::handle_t entity_handle, const int starting_indent,
     const thh::container_t<hy::entity_t>& entities,
