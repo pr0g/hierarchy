@@ -52,17 +52,19 @@ int main(int argc, char** argv) {
   int selected = 0;
 
   // builds everything
-  const auto flattened =
-    hy::build_vector(entities, view, interaction, root_handles);
+  auto flattened = hy::build_vector(entities, view, interaction, root_handles);
 
   for (bool running = true; running;) {
     clear();
 
-    const int count = std::min((int)entities.size(), view.offset + view.count);
+    const int count = std::min((int)flattened.size(), view.offset + view.count);
     for (int entity_index = view.offset; entity_index < count; ++entity_index) {
       const auto& flatten = flattened[entity_index];
       if (entity_index == selected) {
         attron(A_REVERSE);
+      }
+      if (interaction.collapsed(flatten.entity_handle_)) {
+        attron(A_BOLD);
       }
       entities.call(flatten.entity_handle_, [&](const auto& entity) {
         mvprintw(
@@ -70,6 +72,7 @@ int main(int argc, char** argv) {
           entity.name_.c_str());
       });
       attroff(A_REVERSE);
+      attroff(A_BOLD);
     }
 
     // int i = 0;
@@ -96,10 +99,29 @@ int main(int argc, char** argv) {
         }
         break;
       case KEY_DOWN: {
-        int temp = std::max((int)entities.size() - view.count, 0);
-        selected = std::min(selected + 1, (int)entities.size() - 1);
+        int temp = std::max((int)flattened.size() - view.count, 0);
+        selected = std::min(selected + 1, (int)flattened.size() - 1);
         if (selected - view.count - view.offset == 0) {
           view.offset = std::min(view.offset + 1, temp);
+        }
+      } break;
+      case KEY_LEFT: {
+        const auto entity_handle = flattened[selected].entity_handle_;
+        int count = hy::expanded_count(entity_handle, entities, interaction);
+        interaction.collapse(entity_handle, entities);
+        flattened.erase(
+          flattened.begin() + 1 + selected,
+          flattened.begin() + selected + count);
+      } break;
+      case KEY_RIGHT: {
+        const auto entity_handle = flattened[selected].entity_handle_;
+        if (interaction.collapsed(entity_handle)) {
+          interaction.expand(entity_handle);
+          auto handles = hy::build_hierarchy_single(
+            entity_handle, flattened[selected].indent_, entities, interaction);
+          flattened.insert(
+            flattened.begin() + selected + 1, handles.begin() + 1,
+            handles.end());
         }
       } break;
       default:

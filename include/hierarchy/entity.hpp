@@ -82,6 +82,11 @@ namespace hy {
     int32_t indent_;
   };
 
+  std::vector<handle_flattened> build_hierarchy_single(
+    const thh::handle_t entity_handle, const int starting_indent,
+    const thh::container_t<hy::entity_t>& entities,
+    const interaction_t& interaction);
+
   std::vector<handle_flattened> build_vector(
     const thh::container_t<hy::entity_t>& entities, const hy::view_t& view,
     const interaction_t& interaction,

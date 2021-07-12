@@ -234,11 +234,11 @@ namespace hy {
     int count_ = 0;
   };
 
-  static void build_hierarchy_single(
+  std::vector<handle_flattened> build_hierarchy_single(
     const thh::handle_t entity_handle, const int starting_indent,
-    std::vector<handle_flattened>& flattened,
     const thh::container_t<hy::entity_t>& entities,
     const interaction_t& interaction) {
+    std::vector<handle_flattened> flattened;
     std::deque<indent_tracker_t> indent_tracker(1, {starting_indent, 1});
     std::vector<thh::handle_t> handles(1, entity_handle);
     while (!handles.empty()) {
@@ -264,6 +264,7 @@ namespace hy {
         }
       });
     }
+    return flattened;
   }
 
   std::vector<handle_flattened> build_vector(
@@ -272,7 +273,8 @@ namespace hy {
     const std::vector<thh::handle_t>& root_handles) {
     std::vector<handle_flattened> flattened;
     for (const auto root_handle : root_handles) {
-      build_hierarchy_single(root_handle, 0, flattened, entities, interaction);
+      auto h = build_hierarchy_single(root_handle, 0, entities, interaction);
+      flattened.insert(flattened.end(), h.begin(), h.end());
     }
     return flattened;
   }
