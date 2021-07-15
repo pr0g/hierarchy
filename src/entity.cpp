@@ -298,10 +298,8 @@ namespace hy {
           if (interaction.collapsed(entity.parent_)) {
             interaction.expand(entity.parent_);
             top_handle = entity.parent_;
-            // return true;
           }
           search_handle = entity.parent_;
-          // return false;
         });
     }
     return top_handle;
@@ -350,7 +348,6 @@ namespace hy {
     // expand all parents that are collapsed, find top most, build from that
     auto collapsed_parent =
       collapsed_parent_handle(entity_handle, entities, interaction);
-    // interaction.expand(collapsed_parent);
     int collapsed_parent_offset =
       std::find_if(
         flattened.cbegin(), flattened.cend(),
@@ -361,6 +358,7 @@ namespace hy {
     auto handles = hy::build_hierarchy_single(
       collapsed_parent, flattened[collapsed_parent_offset].indent_, entities,
       interaction);
+
     flattened.insert(
       flattened.begin() + collapsed_parent_offset + 1, handles.begin() + 1,
       handles.end());

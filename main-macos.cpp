@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
 
   hy::view_t view;
   view.offset = 0;
-  view.count = 7;
+  view.count = 20;
 
   int selected = 0;
 
@@ -125,7 +125,23 @@ int main(int argc, char** argv) {
       } break;
       case 'r': {
         goto_handle = flattened[selected].entity_handle_;
-      }
+      } break;
+      case ' ': {
+        if (!interaction.collapsed(interaction.selected())) {
+          auto next_handle = entities.add();
+          entities.call(next_handle, [next_handle](auto& entity) {
+            entity.name_ =
+              std::string("entity_") + std::to_string(next_handle.id_);
+          });
+          hy::add_children(
+            flattened[selected].entity_handle_, {next_handle}, entities);
+          const auto child_count = hy::expanded_count_again(
+            flattened[selected].entity_handle_, entities, interaction);
+          flattened.insert(
+            flattened.begin() + selected + child_count - 1,
+            {next_handle, flattened[selected].indent_ + 1});
+        }
+      } break;
       default:
         // noop
         break;
