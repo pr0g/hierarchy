@@ -222,10 +222,26 @@ TEST_CASE("Hierarchy Traversal") {
       hy::expanded_count_again(root_handles[0], entities, interaction);
     printf("%d\n", count3);
 
-    auto v = hy::build_vector(entities, view, interaction, root_handles);
+    auto v = hy::build_vector(entities, interaction, root_handles);
 
     hy::display_hierarchy(
       entities, view, interaction, root_handles, display_name, [] {},
       [](int, int) {});
+  }
+
+  SUBCASE("root_handle") {
+    auto root_handle = hy::root_handle(thh::handle_t(10, 0), entities);
+
+    auto flattened = hy::build_vector(entities, interaction, root_handles);
+    const auto entity_handle = flattened[4].entity_handle_;
+    int count = hy::expanded_count_again(entity_handle, entities, interaction);
+    interaction.collapse(entity_handle, entities);
+    flattened.erase(
+      flattened.begin() + 1 + 4, flattened.begin() + 4 + count);
+    auto selected =
+      hy::go_to_entity(thh::handle_t(10, 0), entities, interaction, flattened);
+
+    int i;
+    i = 0;
   }
 }

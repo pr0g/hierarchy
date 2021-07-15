@@ -51,8 +51,10 @@ int main(int argc, char** argv) {
 
   int selected = 0;
 
+  auto goto_handle = thh::handle_t();
+
   // builds everything
-  auto flattened = hy::build_vector(entities, view, interaction, root_handles);
+  auto flattened = hy::build_vector(entities, interaction, root_handles);
 
   for (bool running = true; running;) {
     clear();
@@ -75,10 +77,6 @@ int main(int argc, char** argv) {
       attroff(A_BOLD);
     }
 
-    // hy::display_hierarchy(
-    //   entities, view, interaction, root_handles, display_name, [] {},
-    //   display_connection);
-
     refresh();
     move(0, 0);
 
@@ -100,7 +98,8 @@ int main(int argc, char** argv) {
       } break;
       case KEY_LEFT: {
         const auto entity_handle = flattened[selected].entity_handle_;
-        int count = hy::expanded_count_again(entity_handle, entities, interaction);
+        int count =
+          hy::expanded_count_again(entity_handle, entities, interaction);
         interaction.collapse(entity_handle, entities);
         flattened.erase(
           flattened.begin() + 1 + selected,
@@ -117,6 +116,16 @@ int main(int argc, char** argv) {
             handles.end());
         }
       } break;
+      case 'g': {
+        if (goto_handle != thh::handle_t()) {
+          selected =
+            hy::go_to_entity(goto_handle, entities, interaction, flattened);
+          view.offset = selected;
+        }
+      } break;
+      case 'r': {
+        goto_handle = flattened[selected].entity_handle_;
+      }
       default:
         // noop
         break;

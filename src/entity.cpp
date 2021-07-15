@@ -268,7 +268,7 @@ namespace hy {
   }
 
   std::vector<handle_flattened> build_vector(
-    const thh::container_t<hy::entity_t>& entities, const hy::view_t& view,
+    const thh::container_t<hy::entity_t>& entities,
     const interaction_t& interaction,
     const std::vector<thh::handle_t>& root_handles) {
     std::vector<handle_flattened> flattened;
@@ -277,6 +277,104 @@ namespace hy {
       flattened.insert(flattened.end(), h.begin(), h.end());
     }
     return flattened;
+  }
+
+  // go_to_entity (suppose all entities are loaded)
+  // linear search to find entity in flattened
+  // find_root (record offset)
+  // record path back to root (expand all), record depth
+  // doesn't need to find root, only last collapsed
+
+  thh::handle_t collapsed_parent_handle(
+    const thh::handle_t entity_handle,
+    const thh::container_t<hy::entity_t>& entities,
+    interaction_t& interaction) {
+    auto search_handle = entity_handle;
+    auto top_handle = thh::handle_t();
+    while (search_handle != thh::handle_t()) {
+      entities.call(
+        search_handle, [&search_handle, &top_handle,
+                        &interaction](const hy::entity_t& entity) {
+          if (interaction.collapsed(entity.parent_)) {
+            interaction.expand(entity.parent_);
+            top_handle = entity.parent_;
+            // return true;
+          }
+          search_handle = entity.parent_;
+          // return false;
+        });
+    }
+    return top_handle;
+  }
+
+  std::pair<thh::handle_t, int> root_handle(
+    const thh::handle_t entity_handle,
+    const thh::container_t<hy::entity_t>& entities) {
+    int depth = 0;
+    auto search_handle = entity_handle;
+    while (search_handle != thh::handle_t()) {
+      bool found = entities
+                     .call_return(
+                       search_handle,
+                       [&search_handle](const hy::entity_t& entity) {
+                         if (entity.parent_ == thh::handle_t()) {
+                           return true;
+                         }
+                         search_handle = entity.parent_;
+                         return false;
+                       })
+                     .value();
+      if (found) {
+        break;
+      } else {
+        depth++;
+      }
+    }
+    return {search_handle, depth};
+  }
+
+  int go_to_entity(
+    const thh::handle_t entity_handle,
+    const thh::container_t<hy::entity_t>& entities, interaction_t& interaction,
+    std::vector<handle_flattened>& flattened) {
+    // might not be found if collapsed
+    if (auto handle_it = std::find_if(
+          flattened.cbegin(), flattened.cend(),
+          [entity_handle](const handle_flattened& flattened_handle) {
+            return flattened_handle.entity_handle_ == entity_handle;
+          });
+        handle_it != flattened.cend()) {
+      return handle_it - flattened.cbegin();
+    }
+    // more complex if it's hidden
+    // expand all parents that are collapsed, find top most, build from that
+    auto collapsed_parent =
+      collapsed_parent_handle(entity_handle, entities, interaction);
+    // interaction.expand(collapsed_parent);
+    int collapsed_parent_offset =
+      std::find_if(
+        flattened.cbegin(), flattened.cend(),
+        [collapsed_parent](const handle_flattened& flattened_handle) {
+          return flattened_handle.entity_handle_ == collapsed_parent;
+        })
+      - flattened.cbegin();
+    auto handles = hy::build_hierarchy_single(
+      collapsed_parent, flattened[collapsed_parent_offset].indent_, entities,
+      interaction);
+    flattened.insert(
+      flattened.begin() + collapsed_parent_offset + 1, handles.begin() + 1,
+      handles.end());
+
+    if (auto handle_it = std::find_if(
+          flattened.cbegin(), flattened.cend(),
+          [entity_handle](const handle_flattened& flattened_handle) {
+            return flattened_handle.entity_handle_ == entity_handle;
+          });
+        handle_it != flattened.cend()) {
+      return handle_it - flattened.cbegin();
+    }
+
+    return -1;
   }
 
   void display_hierarchy(

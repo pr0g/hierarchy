@@ -82,17 +82,25 @@ namespace hy {
     int32_t indent_;
   };
 
-  // go_to_entity
-  // find_root
-    // record path back to root (expand all)
+  std::pair<thh::handle_t, int> root_handle(
+    thh::handle_t entity_handle,
+    const thh::container_t<hy::entity_t>& entities);
+
+  thh::handle_t collapsed_parent_handle(
+    thh::handle_t entity_handle, const thh::container_t<hy::entity_t>& entities,
+    interaction_t& interaction);
+
+  int go_to_entity(
+    thh::handle_t entity_handle, const thh::container_t<hy::entity_t>& entities,
+    interaction_t& interaction, std::vector<handle_flattened>& flattened);
 
   std::vector<handle_flattened> build_hierarchy_single(
-    const thh::handle_t entity_handle, const int starting_indent,
+    thh::handle_t entity_handle, int starting_indent,
     const thh::container_t<hy::entity_t>& entities,
     const interaction_t& interaction);
 
   std::vector<handle_flattened> build_vector(
-    const thh::container_t<hy::entity_t>& entities, const hy::view_t& view,
+    const thh::container_t<hy::entity_t>& entities,
     const interaction_t& interaction,
     const std::vector<thh::handle_t>& root_handles);
 
