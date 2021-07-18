@@ -10,7 +10,6 @@
 
 int main(int argc, char** argv) {
   thh::container_t<hy::entity_t> entities;
-  // auto root_handles = demo::create_sample_entities(entities);
   auto root_handles = demo::create_bench_entities(entities);
 
   // enable support for unicode characters
@@ -27,26 +26,6 @@ int main(int argc, char** argv) {
     collapser.collapse(handle, entities);
   }
 
-  const auto display_name = [](const hy::display_info_t& di) {
-    mvprintw(
-      di.level, di.indent * 4,
-      di.last ? "\xE2\x94\x94\xE2\x94\x80\xE2\x94\x80 "
-              : "\xE2\x94\x9C\xE2\x94\x80\xE2\x94\x80 ");
-    if (di.selected) {
-      attron(A_REVERSE);
-    }
-    if (di.collapsed) {
-      attron(A_BOLD);
-    }
-    printw("%s\n", di.name.c_str());
-    attroff(A_REVERSE);
-    attroff(A_BOLD);
-  };
-
-  const auto display_connection = [](int level, int indent) {
-    mvprintw(level, indent * 4, "\xE2\x94\x82");
-  };
-
   hy::view_t view(
     hy::flatten_entities(entities, collapser, root_handles), 0, 20);
 
@@ -55,6 +34,7 @@ int main(int argc, char** argv) {
 
     const int count = std::min(
       (int)view.flattened_handles().size(), view.offset() + view.count());
+
     for (int handle_index = view.offset(); handle_index < count;
          ++handle_index) {
       const auto& flattened_handle = view.flattened_handles()[handle_index];
@@ -76,7 +56,7 @@ int main(int argc, char** argv) {
     refresh();
     move(0, 0);
 
-    switch (int key = getch(); key) {
+    switch (const int key = getch(); key) {
       case KEY_UP:
         view.move_up();
         break;
