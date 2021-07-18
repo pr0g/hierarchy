@@ -177,39 +177,7 @@ namespace hy {
     }
   }
 
-  // visible count
-  void expanded_count(
-    const thh::handle_t& entity_handle,
-    const thh::container_t<hy::entity_t>& entities,
-    const interaction_t& interaction, int& count) {
-    count++;
-    if (!interaction.collapsed(entity_handle)) {
-      entities.call(entity_handle, [&](const auto& entity) {
-        const auto& children = entity.children_;
-        for (const auto& child_entity_handle : children) {
-          expanded_count(child_entity_handle, entities, interaction, count);
-        }
-      });
-    }
-  }
-
   int expanded_count(
-    const thh::handle_t& entity_handle,
-    const thh::container_t<hy::entity_t>& entities,
-    const interaction_t& interaction) {
-    int count = 0;
-    if (!interaction.collapsed(entity_handle)) {
-      entities.call(entity_handle, [&](const auto& entity) {
-        const auto& children = entity.children_;
-        for (const auto& child_entity_handle : children) {
-          count += expanded_count(child_entity_handle, entities, interaction);
-        }
-      });
-    }
-    return count + 1;
-  }
-
-  int expanded_count_again(
     const thh::handle_t& entity_handle,
     const thh::container_t<hy::entity_t>& entities,
     const interaction_t& interaction) {

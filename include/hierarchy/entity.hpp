@@ -56,17 +56,7 @@ namespace hy {
     std::vector<thh::handle_t> collapsed_;
   };
 
-  void expanded_count(
-    const thh::handle_t& entity_handle,
-    const thh::container_t<hy::entity_t>& entities,
-    const interaction_t& interaction, int& count);
-
   int expanded_count(
-    const thh::handle_t& entity_handle,
-    const thh::container_t<hy::entity_t>& entities,
-    const interaction_t& interaction);
-
-  int expanded_count_again(
     const thh::handle_t& entity_handle,
     const thh::container_t<hy::entity_t>& entities,
     const interaction_t& interaction);
