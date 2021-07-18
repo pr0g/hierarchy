@@ -70,7 +70,7 @@ int main(int argc, char** argv) {
       }
       entities.call(flatten.entity_handle_, [&](const auto& entity) {
         mvprintw(
-          entity_index - view.offset, flatten.indent_ * 4,
+          entity_index - view.offset, flatten.indent_ * 2,
           entity.name_.c_str());
       });
       attroff(A_REVERSE);
