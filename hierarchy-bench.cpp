@@ -31,7 +31,7 @@ BENCHMARK(create_entities);
 
 static void flatten_entities(benchmark::State& state) {
   thh::container_t<hy::entity_t> entities;
-  auto root_handles = demo::create_bench_entities(entities);;
+  auto root_handles = demo::create_bench_entities(entities);
   hy::interaction_t interaction;
   for ([[maybe_unused]] auto _ : state) {
     auto flattened = hy::build_vector(entities, interaction, root_handles);
@@ -41,5 +41,19 @@ static void flatten_entities(benchmark::State& state) {
 }
 
 BENCHMARK(flatten_entities);
+
+static void expand_entity(benchmark::State& state) {
+  thh::container_t<hy::entity_t> entities;
+  auto root_handles = demo::create_bench_entities(entities);
+
+  hy::interaction_t interaction;
+  auto flattened = hy::build_vector(entities, interaction, root_handles);
+
+  for ([[maybe_unused]] auto _ : state) {
+    // expand/collapse
+  }
+}
+
+BENCHMARK(expand_entity);
 
 BENCHMARK_MAIN();
