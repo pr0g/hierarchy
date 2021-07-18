@@ -484,11 +484,11 @@ namespace demo {
   }
 
   std::vector<thh::handle_t> create_bench_entities(
-    thh::container_t<hy::entity_t>& entities) {
+    thh::container_t<hy::entity_t>& entities, const int root_count,
+    const int handle_count) {
     using namespace std::string_literals;
     std::vector<thh::handle_t> roots;
-    for (int64_t r = 0; r < 5; r++) {
-      const int64_t handle_count = 1000000;
+    for (int64_t r = 0; r < root_count; r++) {
       std::vector<thh::handle_t> handles;
       handles.reserve(handle_count);
       for (int64_t i = 0; i < handle_count; i++) {

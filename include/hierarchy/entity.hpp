@@ -92,7 +92,7 @@ namespace hy {
       int count = hy::expanded_count(entity_handle, entities, collapser);
       collapser.collapse(entity_handle, entities);
       flattened_handles_.erase(
-        flattened_handles_.begin() + 1 + selected_,
+        flattened_handles_.begin() + selected_ + 1,
         flattened_handles_.begin() + selected_ + count);
     }
 
@@ -293,7 +293,8 @@ namespace demo {
     thh::container_t<hy::entity_t>& entities);
 
   std::vector<thh::handle_t> create_bench_entities(
-    thh::container_t<hy::entity_t>& entities);
+    thh::container_t<hy::entity_t>& entities, const int root_count,
+    const int handle_count);
 
   enum class input_e { move_up, move_down, expand, collapse, add_child };
 
