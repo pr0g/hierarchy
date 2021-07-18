@@ -33,7 +33,7 @@ static void flatten_entities_expanded(benchmark::State& state) {
   auto root_handles = demo::create_bench_entities(entities);
   hy::collapser_t collapser;
   for ([[maybe_unused]] auto _ : state) {
-    auto flattened = hy::build_vector(entities, collapser, root_handles);
+    auto flattened = hy::flatten_entities(entities, collapser, root_handles);
     benchmark::DoNotOptimize(flattened);
     benchmark::ClobberMemory();
   }
@@ -49,7 +49,7 @@ static void flatten_entities_collapsed(benchmark::State& state) {
     collapser.collapse(handle, entities);
   }
   for ([[maybe_unused]] auto _ : state) {
-    auto flattened = hy::build_vector(entities, collapser, root_handles);
+    auto flattened = hy::flatten_entities(entities, collapser, root_handles);
     benchmark::DoNotOptimize(flattened);
     benchmark::ClobberMemory();
   }
@@ -62,7 +62,7 @@ static void expand_entity(benchmark::State& state) {
   auto root_handles = demo::create_bench_entities(entities);
 
   hy::collapser_t collapser;
-  auto flattened = hy::build_vector(entities, collapser, root_handles);
+  auto flattened = hy::flatten_entities(entities, collapser, root_handles);
 
   for ([[maybe_unused]] auto _ : state) {
     // expand/collapse

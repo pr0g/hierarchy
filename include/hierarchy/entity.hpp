@@ -39,6 +39,195 @@ namespace hy {
     std::vector<thh::handle_t> collapsed_;
   };
 
+  int expanded_count(
+    const thh::handle_t& entity_handle,
+    const thh::container_t<hy::entity_t>& entities,
+    const collapser_t& collapser);
+
+  struct flattened_handle {
+    thh::handle_t entity_handle_;
+    int32_t indent_;
+  };
+
+  int go_to_entity(
+    thh::handle_t entity_handle, const thh::container_t<hy::entity_t>& entities,
+    collapser_t& collapser, std::vector<flattened_handle>& flattened_handles);
+
+  std::vector<flattened_handle> flatten_entity(
+    thh::handle_t entity_handle, int indent,
+    const thh::container_t<hy::entity_t>& entities,
+    const collapser_t& collapser);
+
+  std::vector<flattened_handle> flatten_entities(
+    const thh::container_t<hy::entity_t>& entities,
+    const collapser_t& collapser,
+    const std::vector<thh::handle_t>& root_handles);
+
+  // view into the collection of entities
+  struct view_t {
+    explicit view_t(
+      std::vector<flattened_handle> flattened_handles, int offset, int count)
+      : flattened_handles_(std::move(flattened_handles)), offset_(offset),
+        count_(count) {}
+
+    void move_up() {
+      selected_ = std::max(selected_ - 1, 0);
+      if (selected_ - offset_ + 1 == 0) {
+        offset_ = std::max(offset_ - 1, 0);
+      }
+    }
+
+    void move_down() {
+      const int min_offset =
+        std::max((int)flattened_handles_.size() - count_, 0);
+      selected_ = std::min(selected_ + 1, (int)flattened_handles_.size() - 1);
+      if (selected_ - count_ - offset_ == 0) {
+        offset_ = std::min(offset_ + 1, min_offset);
+      }
+    }
+
+    void collapse(
+      const thh::container_t<hy::entity_t>& entities, collapser_t& collapser) {
+      const auto entity_handle = flattened_handles_[selected_].entity_handle_;
+      int count = hy::expanded_count(entity_handle, entities, collapser);
+      collapser.collapse(entity_handle, entities);
+      flattened_handles_.erase(
+        flattened_handles_.begin() + 1 + selected_,
+        flattened_handles_.begin() + selected_ + count);
+    }
+
+    void expand(
+      const thh::container_t<hy::entity_t>& entities, collapser_t& collapser) {
+      const auto entity_handle = flattened_handles_[selected_].entity_handle_;
+      if (collapser.collapsed(entity_handle)) {
+        collapser.expand(entity_handle);
+        auto handles = hy::flatten_entity(
+          entity_handle, flattened_handles_[selected_].indent_, entities,
+          collapser);
+        flattened_handles_.insert(
+          flattened_handles_.begin() + selected_ + 1, handles.begin() + 1,
+          handles.end());
+      }
+    }
+
+    void goto_handle(
+      const thh::container_t<hy::entity_t>& entities, collapser_t& collapser) {
+      if (goto_handle_ != thh::handle_t()) {
+        selected_ = hy::go_to_entity(
+          goto_handle_, entities, collapser, flattened_handles_);
+        offset_ = selected_;
+      }
+    }
+
+    void record_handle() {
+      goto_handle_ = flattened_handles_[selected_].entity_handle_;
+    }
+
+    void add_child(
+      thh::container_t<hy::entity_t>& entities, collapser_t& collapser) {
+      if (!collapser.collapsed(flattened_handles_[selected_].entity_handle_)) {
+        auto next_handle = entities.add();
+        entities.call(next_handle, [next_handle](auto& entity) {
+          entity.name_ =
+            std::string("entity_") + std::to_string(next_handle.id_);
+        });
+        hy::add_children(
+          flattened_handles_[selected_].entity_handle_, {next_handle},
+          entities);
+        const auto child_count = hy::expanded_count(
+          flattened_handles_[selected_].entity_handle_, entities, collapser);
+        flattened_handles_.insert(
+          flattened_handles_.begin() + selected_ + child_count - 1,
+          {next_handle, flattened_handles_[selected_].indent_ + 1});
+      }
+    }
+
+    void add_sibling(
+      thh::container_t<hy::entity_t>& entities, collapser_t& collapser,
+      std::vector<thh::handle_t>& root_handles) {
+      auto current_handle = flattened_handles_[selected_].entity_handle_;
+      auto next_handle = entities.add();
+      entities.call(next_handle, [next_handle](auto& entity) {
+        entity.name_ = std::string("entity_") + std::to_string(next_handle.id_);
+      });
+      const auto siblings =
+        hy::siblings(current_handle, entities, root_handles);
+
+      int sibling_offset = 0;
+      int siblings_left = 0;
+      if (auto sibling_it =
+            std::find(siblings.begin(), siblings.end(), current_handle);
+          sibling_it != siblings.end()) {
+        sibling_offset = sibling_it - siblings.begin();
+        siblings_left = siblings.size() - sibling_offset;
+      }
+
+      int child_count = 0;
+      for (int i = sibling_offset; i < siblings.size(); ++i) {
+        child_count += hy::expanded_count(siblings[i], entities, collapser) - 1;
+      }
+
+      flattened_handles_.insert(
+        flattened_handles_.begin() + selected_ + child_count + siblings_left,
+        {next_handle, flattened_handles_[selected_].indent_});
+
+      entities.call(current_handle, [&](hy::entity_t& entity) {
+        auto parent_handle =
+          entities
+            .call_return(
+              entity.parent_,
+              [&](hy::entity_t& parent_entity) {
+                parent_entity.children_.push_back(next_handle);
+                return entity.parent_;
+              })
+            .value_or(thh::handle_t());
+        if (parent_handle != thh::handle_t()) {
+          entities.call(next_handle, [parent_handle](hy::entity_t& entity) {
+            entity.parent_ = parent_handle;
+          });
+        } else {
+          root_handles.push_back(next_handle);
+        }
+      });
+    }
+
+    const std::vector<flattened_handle>& flattened_handles() {
+      return flattened_handles_;
+    }
+
+    int offset() const { return offset_; }
+    int count() const { return count_; }
+    int selected() const { return selected_; }
+
+  private:
+    std::vector<flattened_handle> flattened_handles_;
+    int offset_ = 0;
+    int selected_ = 0;
+    int count_ = 20;
+    thh::handle_t goto_handle_;
+  };
+
+  std::pair<thh::handle_t, int> root_handle(
+    thh::handle_t entity_handle,
+    const thh::container_t<hy::entity_t>& entities);
+
+  thh::handle_t collapsed_parent_handle(
+    thh::handle_t entity_handle, const thh::container_t<hy::entity_t>& entities,
+    collapser_t& collapser);
+
+  enum class input_e {
+    move_up,
+    move_down,
+    expand,
+    collapse,
+    add_child,
+    add_sibling,
+    record,
+    go_to
+  };
+
+  //////////////////////////////////////////////////////////////////////////////
+
   struct interaction_t {
     bool collapsed(thh::handle_t handle) const;
 
@@ -67,45 +256,6 @@ namespace hy {
     std::vector<thh::handle_t> siblings_;
     collapser_t collapser_;
   };
-
-  int expanded_count(
-    const thh::handle_t& entity_handle,
-    const thh::container_t<hy::entity_t>& entities,
-    const collapser_t& collapser);
-
-  // view into the collection of entities
-  struct view_t {
-    int offset_ = 0;
-    int selected_ = 0;
-    int count_ = 20;
-  };
-
-  struct handle_flattened {
-    thh::handle_t entity_handle_;
-    int32_t indent_;
-  };
-
-  std::pair<thh::handle_t, int> root_handle(
-    thh::handle_t entity_handle,
-    const thh::container_t<hy::entity_t>& entities);
-
-  thh::handle_t collapsed_parent_handle(
-    thh::handle_t entity_handle, const thh::container_t<hy::entity_t>& entities,
-    collapser_t& collapser);
-
-  int go_to_entity(
-    thh::handle_t entity_handle, const thh::container_t<hy::entity_t>& entities,
-    collapser_t& collapser, std::vector<handle_flattened>& flattened);
-
-  std::vector<handle_flattened> build_hierarchy_single(
-    thh::handle_t entity_handle, int starting_indent,
-    const thh::container_t<hy::entity_t>& entities,
-    const collapser_t& collapser);
-
-  std::vector<handle_flattened> build_vector(
-    const thh::container_t<hy::entity_t>& entities,
-    const collapser_t& collapser,
-    const std::vector<thh::handle_t>& root_handles);
 
   struct model_t {
     thh::container_t<entity_t> entities_;
