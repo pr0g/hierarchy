@@ -1,6 +1,6 @@
 #pragma once
 
-#include "thh_handles/thh_handles.hpp"
+#include <thh_handles/thh_handles.hpp>
 
 #include <functional>
 #include <string>
@@ -26,6 +26,18 @@ namespace hy {
 
   bool has_children(
     thh::handle_t handle, const thh::container_t<hy::entity_t>& entities);
+
+  struct collapser_t {
+    void expand(thh::handle_t entity_handle);
+    void collapse(
+      thh::handle_t entity_handle,
+      const thh::container_t<hy::entity_t>& entities);
+    bool expanded(thh::handle_t handle) const;
+    bool collapsed(thh::handle_t handle) const;
+
+  private:
+    std::vector<thh::handle_t> collapsed_;
+  };
 
   struct interaction_t {
     bool collapsed(thh::handle_t handle) const;
@@ -53,18 +65,19 @@ namespace hy {
   private:
     thh::handle_t selected_;
     std::vector<thh::handle_t> siblings_;
-    std::vector<thh::handle_t> collapsed_;
+    collapser_t collapser_;
   };
 
   int expanded_count(
     const thh::handle_t& entity_handle,
     const thh::container_t<hy::entity_t>& entities,
-    const interaction_t& interaction);
+    const collapser_t& collapser);
 
   // view into the collection of entities
   struct view_t {
-    int offset = 0;
-    int count = 20;
+    int offset_ = 0;
+    int selected_ = 0;
+    int count_ = 20;
   };
 
   struct handle_flattened {
@@ -78,20 +91,20 @@ namespace hy {
 
   thh::handle_t collapsed_parent_handle(
     thh::handle_t entity_handle, const thh::container_t<hy::entity_t>& entities,
-    interaction_t& interaction);
+    collapser_t& collapser);
 
   int go_to_entity(
     thh::handle_t entity_handle, const thh::container_t<hy::entity_t>& entities,
-    interaction_t& interaction, std::vector<handle_flattened>& flattened);
+    collapser_t& collapser, std::vector<handle_flattened>& flattened);
 
   std::vector<handle_flattened> build_hierarchy_single(
     thh::handle_t entity_handle, int starting_indent,
     const thh::container_t<hy::entity_t>& entities,
-    const interaction_t& interaction);
+    const collapser_t& collapser);
 
   std::vector<handle_flattened> build_vector(
     const thh::container_t<hy::entity_t>& entities,
-    const interaction_t& interaction,
+    const collapser_t& collapser,
     const std::vector<thh::handle_t>& root_handles);
 
   struct model_t {

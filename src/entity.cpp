@@ -47,9 +47,43 @@ namespace hy {
       });
   }
 
-  bool interaction_t::collapsed(const thh::handle_t handle) const {
+  bool collapser_t::collapsed(const thh::handle_t handle) const {
     return std::find(collapsed_.begin(), collapsed_.end(), handle)
         != collapsed_.end();
+  }
+
+  bool collapser_t::expanded(const thh::handle_t handle) const {
+    return !collapsed(handle);
+  }
+
+  void collapser_t::expand(const thh::handle_t entity_handle) {
+    if (collapsed(entity_handle)) {
+      collapsed_.erase(
+        std::remove(collapsed_.begin(), collapsed_.end(), entity_handle),
+        collapsed_.end());
+    }
+  }
+
+  void collapser_t::collapse(
+    const thh::handle_t entity_handle,
+    const thh::container_t<hy::entity_t>& entities) {
+    if (!collapsed(entity_handle) && has_children(entity_handle, entities)) {
+      collapsed_.push_back(entity_handle);
+    }
+  }
+
+  bool interaction_t::collapsed(const thh::handle_t entity_handle) const {
+    return collapser_.collapsed(entity_handle);
+  }
+
+  void interaction_t::expand(const thh::handle_t entity_handle) {
+    collapser_.expand(entity_handle);
+  }
+
+  void interaction_t::collapse(
+    const thh::handle_t entity_handle,
+    const thh::container_t<hy::entity_t>& entities) {
+    collapser_.collapse(entity_handle, entities);
   }
 
   void interaction_t::select(
@@ -65,22 +99,6 @@ namespace hy {
   void interaction_t::deselect() {
     selected_ = thh::handle_t();
     siblings_ = {};
-  }
-
-  void interaction_t::expand(const thh::handle_t entity_handle) {
-    if (collapsed(entity_handle)) {
-      collapsed_.erase(
-        std::remove(collapsed_.begin(), collapsed_.end(), entity_handle),
-        collapsed_.end());
-    }
-  }
-
-  void interaction_t::collapse(
-    const thh::handle_t entity_handle,
-    const thh::container_t<hy::entity_t>& entities) {
-    if (!collapsed(entity_handle) && has_children(entity_handle, entities)) {
-      collapsed_.push_back(entity_handle);
-    }
   }
 
   int interaction_t::element() const {
@@ -180,13 +198,13 @@ namespace hy {
   int expanded_count(
     const thh::handle_t& entity_handle,
     const thh::container_t<hy::entity_t>& entities,
-    const interaction_t& interaction) {
+    const collapser_t& collapser) {
     std::vector<thh::handle_t> handles(1, entity_handle);
     int count = 1;
     while (!handles.empty()) {
       auto handle = handles.back();
       handles.pop_back();
-      if (!interaction.collapsed(handle)) {
+      if (!collapser.collapsed(handle)) {
         entities.call(handle, [&](const auto& entity) {
           count += entity.children_.size();
           handles.insert(
@@ -205,7 +223,7 @@ namespace hy {
   std::vector<handle_flattened> build_hierarchy_single(
     const thh::handle_t entity_handle, const int starting_indent,
     const thh::container_t<hy::entity_t>& entities,
-    const interaction_t& interaction) {
+    const collapser_t& collapser) {
     std::vector<handle_flattened> flattened;
     std::deque<indent_tracker_t> indent_tracker(1, {starting_indent, 1});
     std::vector<thh::handle_t> handles(1, entity_handle);
@@ -224,7 +242,7 @@ namespace hy {
       flattened.push_back(handle_flattened{handle, curr_indent});
       handles.pop_back();
       entities.call(handle, [&](const auto& entity) {
-        if (!entity.children_.empty() && !interaction.collapsed(handle)) {
+        if (!entity.children_.empty() && !collapser.collapsed(handle)) {
           indent_tracker.push_front(
             indent_tracker_t{curr_indent + 1, (int)entity.children_.size()});
           handles.insert(
@@ -237,11 +255,11 @@ namespace hy {
 
   std::vector<handle_flattened> build_vector(
     const thh::container_t<hy::entity_t>& entities,
-    const interaction_t& interaction,
+    const collapser_t& collapser,
     const std::vector<thh::handle_t>& root_handles) {
     std::vector<handle_flattened> flattened;
     for (const auto root_handle : root_handles) {
-      auto h = build_hierarchy_single(root_handle, 0, entities, interaction);
+      auto h = build_hierarchy_single(root_handle, 0, entities, collapser);
       flattened.insert(flattened.end(), h.begin(), h.end());
     }
     return flattened;
@@ -256,15 +274,15 @@ namespace hy {
   thh::handle_t collapsed_parent_handle(
     const thh::handle_t entity_handle,
     const thh::container_t<hy::entity_t>& entities,
-    interaction_t& interaction) {
+    collapser_t& collapser) {
     auto search_handle = entity_handle;
     auto top_handle = thh::handle_t();
     while (search_handle != thh::handle_t()) {
       entities.call(
         search_handle, [&search_handle, &top_handle,
-                        &interaction](const hy::entity_t& entity) {
-          if (interaction.collapsed(entity.parent_)) {
-            interaction.expand(entity.parent_);
+                        &collapser](const hy::entity_t& entity) {
+          if (collapser.collapsed(entity.parent_)) {
+            collapser.expand(entity.parent_);
             top_handle = entity.parent_;
           }
           search_handle = entity.parent_;
@@ -301,7 +319,7 @@ namespace hy {
 
   int go_to_entity(
     const thh::handle_t entity_handle,
-    const thh::container_t<hy::entity_t>& entities, interaction_t& interaction,
+    const thh::container_t<hy::entity_t>& entities, collapser_t& collapser,
     std::vector<handle_flattened>& flattened) {
     // might not be found if collapsed
     if (auto handle_it = std::find_if(
@@ -315,7 +333,7 @@ namespace hy {
     // more complex if it's hidden
     // expand all parents that are collapsed, find top most, build from that
     auto collapsed_parent =
-      collapsed_parent_handle(entity_handle, entities, interaction);
+      collapsed_parent_handle(entity_handle, entities, collapser);
     int collapsed_parent_offset =
       std::find_if(
         flattened.cbegin(), flattened.cend(),
@@ -325,7 +343,7 @@ namespace hy {
       - flattened.cbegin();
     auto handles = hy::build_hierarchy_single(
       collapsed_parent, flattened[collapsed_parent_offset].indent_, entities,
-      interaction);
+      collapser);
 
     flattened.insert(
       flattened.begin() + collapsed_parent_offset + 1, handles.begin() + 1,

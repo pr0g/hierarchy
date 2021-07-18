@@ -28,6 +28,7 @@ TEST_CASE("Hierarchy Traversal") {
   auto root_handles = demo::create_sample_entities(entities);
 
   hy::interaction_t interaction;
+  hy::collapser_t collapser;
 
   SUBCASE("move_down on last element moves to child if reachable") {
     interaction.select(thh::handle_t(0, 0), entities, root_handles);
@@ -206,33 +207,26 @@ TEST_CASE("Hierarchy Traversal") {
     interaction.select(root_handles.front(), entities, root_handles);
 
     hy::view_t view;
-    view.count = 12;
-    view.offset = 6;
+    view.count_ = 12;
+    view.offset_ = 6;
 
     const auto display_name = [](const hy::display_info_t& di) {};
 
-    int count3 =
-      hy::expanded_count(root_handles[0], entities, interaction);
-    printf("%d\n", count3);
+    const int entity_count = hy::expanded_count(root_handles[0], entities, collapser);
 
-    auto v = hy::build_vector(entities, interaction, root_handles);
-
-    hy::display_hierarchy(
-      entities, view, interaction, root_handles, display_name, [] {},
-      [](int, int) {});
+    const auto v = hy::build_vector(entities, collapser, root_handles);
   }
 
   SUBCASE("root_handle") {
     auto root_handle = hy::root_handle(thh::handle_t(10, 0), entities);
 
-    auto flattened = hy::build_vector(entities, interaction, root_handles);
+    auto flattened = hy::build_vector(entities, collapser, root_handles);
     const auto entity_handle = flattened[4].entity_handle_;
-    int count = hy::expanded_count(entity_handle, entities, interaction);
+    int count = hy::expanded_count(entity_handle, entities, collapser);
     interaction.collapse(entity_handle, entities);
-    flattened.erase(
-      flattened.begin() + 1 + 4, flattened.begin() + 4 + count);
+    flattened.erase(flattened.begin() + 1 + 4, flattened.begin() + 4 + count);
     auto selected =
-      hy::go_to_entity(thh::handle_t(10, 0), entities, interaction, flattened);
+      hy::go_to_entity(thh::handle_t(10, 0), entities, collapser, flattened);
 
     int i;
     i = 0;

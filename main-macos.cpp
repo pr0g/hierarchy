@@ -22,9 +22,9 @@ int main(int argc, char** argv) {
   noecho(); // don't echo while we do getch
   curs_set(0); // hide cursor
 
-  hy::interaction_t interaction;
+  hy::collapser_t collapser;
   for (const auto& handle : root_handles) {
-    interaction.collapse(handle, entities);
+    collapser.collapse(handle, entities);
   }
 
   const auto display_name = [](const hy::display_info_t& di) {
@@ -48,31 +48,29 @@ int main(int argc, char** argv) {
   };
 
   hy::view_t view;
-  view.offset = 0;
-  view.count = 20;
-
-  int selected = 0;
+  view.offset_ = 0;
+  view.count_ = 20;
 
   auto goto_handle = thh::handle_t();
 
   // builds everything
-  auto flattened = hy::build_vector(entities, interaction, root_handles);
+  auto flattened = hy::build_vector(entities, collapser, root_handles);
 
   for (bool running = true; running;) {
     clear();
 
-    const int count = std::min((int)flattened.size(), view.offset + view.count);
-    for (int entity_index = view.offset; entity_index < count; ++entity_index) {
+    const int count = std::min((int)flattened.size(), view.offset_ + view.count_);
+    for (int entity_index = view.offset_; entity_index < count; ++entity_index) {
       const auto& flatten = flattened[entity_index];
-      if (entity_index == selected) {
+      if (entity_index == view.selected_) {
         attron(A_REVERSE);
       }
-      if (interaction.collapsed(flatten.entity_handle_)) {
+      if (collapser.collapsed(flatten.entity_handle_)) {
         attron(A_BOLD);
       }
       entities.call(flatten.entity_handle_, [&](const auto& entity) {
         mvprintw(
-          entity_index - view.offset, flatten.indent_ * 2,
+          entity_index - view.offset_, flatten.indent_ * 2,
           entity.name_.c_str());
       });
       attroff(A_REVERSE);
@@ -86,65 +84,65 @@ int main(int argc, char** argv) {
 
     switch (int key = getch(); key) {
       case KEY_UP:
-        selected = std::max(selected - 1, 0);
-        if (selected - view.offset + 1 == 0) {
-          view.offset = std::max(view.offset - 1, 0);
+        view.selected_ = std::max(view.selected_ - 1, 0);
+        if (view.selected_ - view.offset_ + 1 == 0) {
+          view.offset_ = std::max(view.offset_ - 1, 0);
         }
         break;
       case KEY_DOWN: {
-        int temp = std::max((int)flattened.size() - view.count, 0);
-        selected = std::min(selected + 1, (int)flattened.size() - 1);
-        if (selected - view.count - view.offset == 0) {
-          view.offset = std::min(view.offset + 1, temp);
+        int temp = std::max((int)flattened.size() - view.count_, 0);
+        view.selected_ = std::min(view.selected_ + 1, (int)flattened.size() - 1);
+        if (view.selected_ - view.count_ - view.offset_ == 0) {
+          view.offset_ = std::min(view.offset_ + 1, temp);
         }
       } break;
       case KEY_LEFT: {
-        const auto entity_handle = flattened[selected].entity_handle_;
-        int count = hy::expanded_count(entity_handle, entities, interaction);
-        interaction.collapse(entity_handle, entities);
+        const auto entity_handle = flattened[view.selected_].entity_handle_;
+        int count = hy::expanded_count(entity_handle, entities, collapser);
+        collapser.collapse(entity_handle, entities);
         flattened.erase(
-          flattened.begin() + 1 + selected,
-          flattened.begin() + selected + count);
+          flattened.begin() + 1 + view.selected_,
+          flattened.begin() + view.selected_ + count);
       } break;
       case KEY_RIGHT: {
-        const auto entity_handle = flattened[selected].entity_handle_;
-        if (interaction.collapsed(entity_handle)) {
-          interaction.expand(entity_handle);
+        const auto entity_handle = flattened[view.selected_].entity_handle_;
+        if (collapser.collapsed(entity_handle)) {
+          collapser.expand(entity_handle);
           auto handles = hy::build_hierarchy_single(
-            entity_handle, flattened[selected].indent_, entities, interaction);
+            entity_handle, flattened[view.selected_].indent_, entities, collapser);
           flattened.insert(
-            flattened.begin() + selected + 1, handles.begin() + 1,
+            flattened.begin() + view.selected_ + 1, handles.begin() + 1,
             handles.end());
         }
       } break;
       case 'g': {
         if (goto_handle != thh::handle_t()) {
-          selected =
-            hy::go_to_entity(goto_handle, entities, interaction, flattened);
-          view.offset = selected;
+          view.selected_ =
+            hy::go_to_entity(goto_handle, entities, collapser, flattened);
+          view.offset_ = view.selected_;
         }
       } break;
       case 'r': {
-        goto_handle = flattened[selected].entity_handle_;
+        goto_handle = flattened[view.selected_].entity_handle_;
       } break;
       case 'c': {
-        if (!interaction.collapsed(flattened[selected].entity_handle_)) {
+        if (!collapser.collapsed(flattened[view.selected_].entity_handle_)) {
           auto next_handle = entities.add();
           entities.call(next_handle, [next_handle](auto& entity) {
             entity.name_ =
               std::string("entity_") + std::to_string(next_handle.id_);
           });
           hy::add_children(
-            flattened[selected].entity_handle_, {next_handle}, entities);
+            flattened[view.selected_].entity_handle_, {next_handle}, entities);
           const auto child_count = hy::expanded_count(
-            flattened[selected].entity_handle_, entities, interaction);
+            flattened[view.selected_].entity_handle_, entities, collapser);
           flattened.insert(
-            flattened.begin() + selected + child_count - 1,
-            {next_handle, flattened[selected].indent_ + 1});
+            flattened.begin() + view.selected_ + child_count - 1,
+            {next_handle, flattened[view.selected_].indent_ + 1});
         }
       } break;
       case 's': {
-        auto current_handle = flattened[selected].entity_handle_;
+        auto current_handle = flattened[view.selected_].entity_handle_;
         auto next_handle = entities.add();
         entities.call(next_handle, [next_handle](auto& entity) {
           entity.name_ =
@@ -164,12 +162,12 @@ int main(int argc, char** argv) {
 
         int child_count = 0;
         for (int i = sibling_offset; i < siblings.size(); ++i) {
-          child_count += hy::expanded_count(siblings[i], entities, interaction) - 1;
+          child_count += hy::expanded_count(siblings[i], entities, collapser) - 1;
         }
 
         flattened.insert(
-          flattened.begin() + selected + child_count + siblings_left,
-          {next_handle, flattened[selected].indent_});
+          flattened.begin() + view.selected_ + child_count + siblings_left,
+          {next_handle, flattened[view.selected_].indent_});
 
         entities.call(current_handle, [&](hy::entity_t& entity) {
           auto parent_handle =
