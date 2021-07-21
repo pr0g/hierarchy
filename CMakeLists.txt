@@ -21,12 +21,14 @@ option(HIERARCHY_TEST "Builds unit tests for hierarchy library" OFF)
 option(HIERARCHY_BENCH "Builds benchmarks for hierarchy library" OFF)
 
 if (${HIERARCHY_DEMO})
-  add_executable(${PROJECT_NAME}-demo)
+  # add_executable(${PROJECT_NAME}-demo) # temp removal
 
   if (${CMAKE_HOST_APPLE})
     find_package(Curses)
-    target_sources(${PROJECT_NAME}-demo PRIVATE main-macos.cpp)
-    target_link_libraries(${PROJECT_NAME}-demo PRIVATE Curses ${PROJECT_NAME})
+
+    add_executable(${PROJECT_NAME}-scroll-demo)
+    target_sources(${PROJECT_NAME}-scroll-demo PRIVATE main-scroll-macos.cpp)
+    target_link_libraries(${PROJECT_NAME}-scroll-demo PRIVATE Curses ${PROJECT_NAME})
 
     add_executable(scroll-demo)
     target_sources(scroll-demo PRIVATE main-scroll-simple-macos.cpp)
