@@ -281,7 +281,7 @@ namespace hy {
   using display_connection_fn = std::function<void(int, int)>;
 
   void display_hierarchy(
-    const thh::container_t<hy::entity_t>& entities, const view_t& view,
+    const thh::container_t<hy::entity_t>& entities,
     const interaction_t& interaction,
     const std::vector<thh::handle_t>& root_handles, const display_fn& display,
     const scope_exit_fn& scope_exit,

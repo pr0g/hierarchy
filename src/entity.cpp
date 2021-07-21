@@ -361,34 +361,20 @@ namespace hy {
   }
 
   void display_hierarchy(
-    const thh::container_t<hy::entity_t>& entities, const view_t& view,
+    const thh::container_t<hy::entity_t>& entities,
     const interaction_t& interaction,
     const std::vector<thh::handle_t>& root_handles, const display_fn& display,
     const scope_exit_fn& scope_exit,
     const display_connection_fn& display_connection) {
     std::deque<thh::handle_t> entity_handle_stack;
-
-    // int visible_count = 0;
     for (auto it = root_handles.begin(); it != root_handles.end(); ++it) {
-      // for (auto it = root_handles.rbegin(); it != root_handles.rend();
-      // ++it)
-      // {
-      // visible_count += expanded_count(*it, entities, interaction,
-      // visible_count);
-      // printf("%d\n", visible_count);
-      // if (visible_count < view.offset) {
       entity_handle_stack.push_front(*it);
-      //}
-      // if (visible_count >= view.count) {
-      //  break;
-      //}
     }
 
     std::deque<indent_tracker_t> indent_tracker;
     indent_tracker.push_front(
       indent_tracker_t{0, (int)entity_handle_stack.size()});
 
-    // set level to view offset?
     int level = 0; // the level (row) in the hierarchy
     int last_indent = 0; // most recent indent (col)
     while (!entity_handle_stack.empty()) {
@@ -419,9 +405,6 @@ namespace hy {
       const auto entity_handle = entity_handle_stack.back();
       entity_handle_stack.pop_back();
 
-      // const auto entity_handle = entity_handle_stack.front();
-      // entity_handle_stack.pop_front();
-
       entities.call(entity_handle, [&](const auto& entity) {
         const auto& children = entity.children_;
 
@@ -443,14 +426,10 @@ namespace hy {
             indent_tracker_t{curr_indent + 1, (int)children.size()});
           for (auto it = children.rbegin(); it != children.rend(); ++it) {
             entity_handle_stack.push_back(*it);
-            // entity_handle_stack.push_front(*it);
           }
         }
       });
       level++;
-      // if (level >= view.count) {
-      //  break;
-      //}
       last_indent = curr_indent;
     }
 
