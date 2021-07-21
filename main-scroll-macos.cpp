@@ -10,7 +10,7 @@
 
 int main(int argc, char** argv) {
   thh::container_t<hy::entity_t> entities;
-  auto root_handles = demo::create_bench_entities(entities, 5, 1000000);
+  auto root_handles = demo::create_sample_entities(entities);
 
   // enable support for unicode characters
   setlocale(LC_CTYPE, "");
@@ -22,9 +22,10 @@ int main(int argc, char** argv) {
   curs_set(0); // hide cursor
 
   hy::collapser_t collapser;
-  for (const auto& handle : root_handles) {
-    collapser.collapse(handle, entities);
-  }
+  // temp - keep root handles expanded
+  // for (const auto& handle : root_handles) {
+  //   collapser.collapse(handle, entities);
+  // }
 
   hy::view_t view(
     hy::flatten_entities(entities, collapser, root_handles), 0, 20);
@@ -35,9 +36,19 @@ int main(int argc, char** argv) {
     const int count = std::min(
       (int)view.flattened_handles().size(), view.offset() + view.count());
 
+    // walk over 'view' to build data structure to draw
+
     for (int handle_index = view.offset(); handle_index < count;
          ++handle_index) {
       const auto& flattened_handle = view.flattened_handles()[handle_index];
+
+      const bool last = handle_index + 1 == view.flattened_handles().size()
+                     || view.flattened_handles()[handle_index + 1].indent_
+                          != flattened_handle.indent_;
+      mvprintw(
+        handle_index - view.offset(), flattened_handle.indent_ * 4,
+        last ? "\xE2\x94\x94\xE2\x94\x80\xE2\x94\x80 "
+             : "\xE2\x94\x9C\xE2\x94\x80\xE2\x94\x80 ");
       if (handle_index == view.selected()) {
         attron(A_REVERSE);
       }
@@ -45,9 +56,7 @@ int main(int argc, char** argv) {
         attron(A_BOLD);
       }
       entities.call(flattened_handle.entity_handle_, [&](const auto& entity) {
-        mvprintw(
-          handle_index - view.offset(), flattened_handle.indent_ * 2,
-          entity.name_.c_str());
+        printw("%s\n", entity.name_.c_str());
       });
       attroff(A_REVERSE);
       attroff(A_BOLD);

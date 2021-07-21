@@ -238,7 +238,7 @@ namespace hy {
         }
       }
 
-      auto handle = handles.back();
+      const auto handle = handles.back();
       flattened.push_back(flattened_handle{handle, curr_indent});
       handles.pop_back();
       entities.call(handle, [&](const auto& entity) {
@@ -259,8 +259,10 @@ namespace hy {
     const std::vector<thh::handle_t>& root_handles) {
     std::vector<flattened_handle> flattened;
     for (const auto root_handle : root_handles) {
-      auto h = flatten_entity(root_handle, 0, entities, collapser);
-      flattened.insert(flattened.end(), h.begin(), h.end());
+      auto flattened_entity =
+        flatten_entity(root_handle, 0, entities, collapser);
+      flattened.insert(
+        flattened.end(), flattened_entity.begin(), flattened_entity.end());
     }
     return flattened;
   }
