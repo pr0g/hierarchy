@@ -37,6 +37,47 @@ int main(int argc, char** argv) {
       (int)view.flattened_handles().size(), view.offset() + view.count());
 
     // walk over 'view' to build data structure to draw
+    std::vector<int> indents;
+    indents.reserve(count);
+    for (int handle_index = view.offset(); handle_index < count;
+         ++handle_index) {
+      const auto& flattened_handle = view.flattened_handles()[handle_index];
+      indents.push_back(flattened_handle.indent_);
+    }
+
+    std::vector<std::pair<int, int>> connections;
+    for (int outer = 0; outer < indents.size(); ++outer) {
+      int start_level = -1;
+      int end_level = -1;
+      bool tracking = false;
+      bool valid = true;
+      for (int inner = outer + 1; inner < indents.size(); ++inner) {
+        if (indents[inner] == indents[outer] && !tracking) {
+          continue;
+        }
+        if (indents[inner] == indents[outer] && tracking) {
+          end_level = inner;
+          break;
+        }
+        if (indents[inner] < indents[outer] && tracking) {
+          valid = false;
+        }
+        if (indents[inner] != indents[outer]) {
+          start_level = outer;
+          tracking = true;
+        }
+      }
+
+      if (tracking && valid) {
+        for (int i = start_level; i < end_level; ++i) {
+          connections.push_back({view.flattened_handles()[outer].indent_, i});
+        }
+      }
+    }
+
+    for (const auto& connection : connections) {
+      mvprintw(connection.second, connection.first * 4, "\xE2\x94\x82");
+    }
 
     for (int handle_index = view.offset(); handle_index < count;
          ++handle_index) {
@@ -44,7 +85,7 @@ int main(int argc, char** argv) {
 
       const bool last = handle_index + 1 == view.flattened_handles().size()
                      || view.flattened_handles()[handle_index + 1].indent_
-                          != flattened_handle.indent_;
+                          < flattened_handle.indent_;
       mvprintw(
         handle_index - view.offset(), flattened_handle.indent_ * 4,
         last ? "\xE2\x94\x94\xE2\x94\x80\xE2\x94\x80 "
