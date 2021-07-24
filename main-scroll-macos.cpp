@@ -1,5 +1,6 @@
 #include "hierarchy/entity.hpp"
 
+#include <algorithm>
 #include <locale.h>
 #include <ncurses.h>
 #include <optional>
@@ -33,63 +34,78 @@ int main(int argc, char** argv) {
   for (bool running = true; running;) {
     clear();
 
-    const int count = std::min(
-      (int)view.flattened_handles().size(), view.offset() + view.count());
-
-    // walk over 'view' to build data structure to draw
-    std::vector<int> indents;
-    indents.reserve(count);
-    for (int handle_index = view.offset(); handle_index < count;
-         ++handle_index) {
-      const auto& flattened_handle = view.flattened_handles()[handle_index];
-      indents.push_back(flattened_handle.indent_);
-    }
-
     std::vector<std::pair<int, int>> connections;
-    for (int outer = 0; outer < indents.size(); ++outer) {
-      int start_level = -1;
-      int end_level = -1;
-      bool tracking = false;
-      bool valid = true;
-      for (int inner = outer + 1; inner < indents.size(); ++inner) {
-        if (indents[inner] == indents[outer] && !tracking) {
-          continue;
+    // find another matching indent before a lower indent is found
+    std::vector<bool> ends;
+    for (int indent_index = 0;
+         indent_index
+         < std::min((int)view.flattened_handles().size(), view.count());
+         ++indent_index) {
+      int next_indent_index = indent_index + 1;
+      if (auto found = std::find_if(
+            view.flattened_handles().begin() + view.offset()
+              + next_indent_index,
+            view.flattened_handles().end(),
+            [&view, indent_index](const auto& flattened_handle) {
+              return view.flattened_handles()[indent_index + view.offset()]
+                       .indent_
+                  == flattened_handle.indent_;
+            });
+          found != view.flattened_handles().end()) {
+        int range = found
+                  - (view.flattened_handles().begin() + view.offset()
+                     + next_indent_index);
+        bool end = false;
+        for (int i = 0; i < range; i++) {
+          int is = next_indent_index + i;
+          if (
+            view.flattened_handles()[is + view.offset()].indent_
+            < found->indent_) {
+            end = true;
+            ends.push_back(true);
+            break;
+          }
         }
-        if (indents[inner] == indents[outer] && tracking) {
-          end_level = inner;
-          break;
+        if (!end) {
+          for (int i = 0; i < range; i++) {
+            int is = next_indent_index + i;
+            int min = std::min(
+              view.count(),
+              (int)view.flattened_handles().size() - view.offset());
+            if (is >= min) {
+              break;
+            }
+            connections.push_back(
+              {view.flattened_handles()[indent_index + view.offset()].indent_,
+               is});
+          }
+          ends.push_back(false);
         }
-        if (indents[inner] < indents[outer] && tracking) {
-          valid = false;
-        }
-        if (indents[inner] != indents[outer]) {
-          start_level = outer;
-          tracking = true;
-        }
-      }
-
-      if (tracking && valid) {
-        for (int i = start_level; i < end_level; ++i) {
-          connections.push_back({view.flattened_handles()[outer].indent_, i});
-        }
+      } else {
+        ends.push_back(true);
       }
     }
+
+    assert(
+      ends.size()
+      == std::min((int)view.flattened_handles().size(), view.count()));
 
     for (const auto& connection : connections) {
       mvprintw(connection.second, connection.first * 4, "\xE2\x94\x82");
     }
 
+    const int count = std::min(
+      (int)view.flattened_handles().size(), view.offset() + view.count());
     for (int handle_index = view.offset(); handle_index < count;
          ++handle_index) {
       const auto& flattened_handle = view.flattened_handles()[handle_index];
 
-      const bool last = handle_index + 1 == view.flattened_handles().size()
-                     || view.flattened_handles()[handle_index + 1].indent_
-                          < flattened_handle.indent_;
       mvprintw(
         handle_index - view.offset(), flattened_handle.indent_ * 4,
-        last ? "\xE2\x94\x94\xE2\x94\x80\xE2\x94\x80 "
-             : "\xE2\x94\x9C\xE2\x94\x80\xE2\x94\x80 ");
+        ends[handle_index - view.offset()]
+          ? "\xE2\x94\x94\xE2\x94\x80\xE2\x94\x80 "
+          : "\xE2\x94\x9C\xE2\x94\x80\xE2\x94\x80 ");
+
       if (handle_index == view.selected()) {
         attron(A_REVERSE);
       }
