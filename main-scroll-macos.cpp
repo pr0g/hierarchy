@@ -34,11 +34,45 @@ int main(int argc, char** argv) {
     clear();
 
     std::vector<std::pair<int, int>> connections;
+    const auto min_elements = std::min((int)view.flattened_handles().size(), view.count());
+    const int size = view.flattened_handles().size();
     // find another matching indent before a lower indent is found
     std::vector<bool> ends;
-    for (int indent_index = 0;
-         indent_index < std::min((int)view.flattened_handles().size(), view.count());
-         ++indent_index) {
+    // search 'upwards' first (reverse iterators)
+    for (int indent_index = 0; indent_index < min_elements; ++indent_index) {
+      int rnext_indent_index = indent_index - 1;
+      if (auto rfound = std::find_if(
+            view.flattened_handles().rbegin() + (size - 1) - (view.offset() + rnext_indent_index),
+            view.flattened_handles().rend(),
+            [&view, indent_index](const auto& flattened_handle) {
+              return view.flattened_handles()[indent_index + view.offset()].indent_
+                  == flattened_handle.indent_;
+            });
+          rfound != view.flattened_handles().rend()) {
+        auto ffound = (rfound + 1).base();
+        auto dist = ffound - view.flattened_handles().begin();
+        if (dist < view.offset()) {
+          if (std::all_of(
+                view.flattened_handles().rbegin() + (size - 1)
+                  - (view.offset() + rnext_indent_index),
+                rfound, [&view, indent_index](const auto& flattened_handle) {
+                  return flattened_handle.indent_
+                      >= view.flattened_handles()[indent_index + view.offset()].indent_;
+                })) {
+            int range = rfound
+                      - (view.flattened_handles().rbegin() + (size - 1)
+                         - (view.offset() + rnext_indent_index));
+            for (int i = 0; i < range; ++i) {
+              int is = rnext_indent_index - i;
+              if (is < 0) {
+                break;
+              }
+              connections.push_back(
+                {view.flattened_handles()[indent_index + view.offset()].indent_, is});
+            }
+          }
+        }
+      }
       int next_indent_index = indent_index + 1;
       if (auto found = std::find_if(
             view.flattened_handles().begin() + view.offset() + next_indent_index,
