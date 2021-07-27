@@ -33,6 +33,9 @@ int main(int argc, char** argv) {
   for (bool running = true; running;) {
     clear();
 
+    int min_indent = std::numeric_limits<int>::max();
+    thh::handle_t min_indent_handle;
+
     std::vector<std::pair<int, int>> connections;
     const auto min_elements = std::min((int)view.flattened_handles().size(), view.count());
     const int size = view.flattened_handles().size();
@@ -40,9 +43,13 @@ int main(int argc, char** argv) {
     std::vector<bool> ends;
     // search 'upwards' first (reverse iterators)
     for (int indent_index = 0; indent_index < min_elements; ++indent_index) {
-      int rnext_indent_index = indent_index - 1;
+      if (view.flattened_handles()[indent_index + view.offset()].indent_ < min_indent) {
+        min_indent = view.flattened_handles()[indent_index + view.offset()].indent_;
+        min_indent_handle = view.flattened_handles()[indent_index + view.offset()].entity_handle_;
+      }
+      int prev_indent_index = indent_index - 1;
       if (auto rfound = std::find_if(
-            view.flattened_handles().rbegin() + (size - 1) - (view.offset() + rnext_indent_index),
+            view.flattened_handles().rbegin() + (size - 1) - (view.offset() + prev_indent_index),
             view.flattened_handles().rend(),
             [&view, indent_index](const auto& flattened_handle) {
               return view.flattened_handles()[indent_index + view.offset()].indent_
@@ -54,16 +61,16 @@ int main(int argc, char** argv) {
         if (dist < view.offset()) {
           if (std::all_of(
                 view.flattened_handles().rbegin() + (size - 1)
-                  - (view.offset() + rnext_indent_index),
+                  - (view.offset() + prev_indent_index),
                 rfound, [&view, indent_index](const auto& flattened_handle) {
                   return flattened_handle.indent_
                       >= view.flattened_handles()[indent_index + view.offset()].indent_;
                 })) {
             int range = rfound
                       - (view.flattened_handles().rbegin() + (size - 1)
-                         - (view.offset() + rnext_indent_index));
+                         - (view.offset() + prev_indent_index));
             for (int i = 0; i < range; ++i) {
-              int is = rnext_indent_index - i;
+              int is = prev_indent_index - i;
               if (is < 0) {
                 break;
               }
@@ -106,6 +113,52 @@ int main(int argc, char** argv) {
         }
       } else {
         ends.push_back(true);
+      }
+    }
+
+    // draw all lines for entities that are offscreen
+    for (int i = min_indent - 1; i >= 0; --i) {
+      bool draw = entities
+                    .call_return(
+                      min_indent_handle,
+                      [&](const hy::entity_t& entity) {
+                        // update min indent as we walk backwards right to left
+                        min_indent_handle = entity.parent_;
+                        return entities
+                          .call_return(
+                            entity.parent_,
+                            [&](const hy::entity_t& parent) {
+                              if (parent.parent_ == thh::handle_t()) {
+                                if (auto it = std::find(
+                                      root_handles.begin(), root_handles.end(), entity.parent_);
+                                    it != root_handles.end()) {
+                                  auto position = it - root_handles.begin();
+                                  return position != (root_handles.size() - 1);
+                                }
+                                return false;
+                              }
+                              return entities
+                                .call_return(
+                                  parent.parent_,
+                                  [&](const hy::entity_t& grandparent) {
+                                    if (auto it = std::find(
+                                          grandparent.children_.begin(),
+                                          grandparent.children_.end(), entity.parent_);
+                                        it != grandparent.children_.end()) {
+                                      auto position = it - grandparent.children_.begin();
+                                      return position != (grandparent.children_.size() - 1);
+                                    }
+                                    return false;
+                                  })
+                                .value_or(false);
+                            })
+                          .value_or(false);
+                      })
+                    .value_or(false);
+      if (draw) {
+        for (int r = 0; r < view.count(); r++) {
+          mvprintw(r, i * 4, "\xE2\x94\x82");
+        }
       }
     }
 
