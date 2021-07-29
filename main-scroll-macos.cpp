@@ -89,17 +89,14 @@ int main(int argc, char** argv) {
                   == flattened_handle.indent_;
             });
           found != view.flattened_handles().end()) {
-        int range = found - (view.flattened_handles().begin() + view.offset() + next_indent_index);
-        bool end = false;
-        for (int i = 0; i < range; i++) {
-          int is = next_indent_index + i;
-          if (view.flattened_handles()[is + view.offset()].indent_ < found->indent_) {
-            end = true;
-            ends.push_back(true);
-            break;
-          }
-        }
-        if (!end) {
+        if (std::all_of(
+              view.flattened_handles().begin() + next_indent_index + view.offset(), found,
+              [&view, indent_index](const auto& flattened_handle) {
+                return flattened_handle.indent_
+                    >= view.flattened_handles()[indent_index + view.offset()].indent_;
+              })) {
+          int range =
+            found - (view.flattened_handles().begin() + view.offset() + next_indent_index);
           for (int i = 0; i < range; i++) {
             int is = next_indent_index + i;
             int min = std::min(view.count(), (int)view.flattened_handles().size() - view.offset());
@@ -110,6 +107,8 @@ int main(int argc, char** argv) {
               {view.flattened_handles()[indent_index + view.offset()].indent_, is});
           }
           ends.push_back(false);
+        } else {
+          ends.push_back(true);
         }
       } else {
         ends.push_back(true);
