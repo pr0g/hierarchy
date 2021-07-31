@@ -362,6 +362,193 @@ namespace hy {
     return -1;
   }
 
+  void display_scrollable_hierarchy(
+    const thh::container_t<hy::entity_t>& entities,
+    const std::vector<thh::handle_t>& root_handles, const view_t& view,
+    const collapser_t& collapser, const display_ops_t& display_ops) {
+    int min_indent = std::numeric_limits<int>::max();
+    thh::handle_t min_indent_handle;
+
+    std::vector<std::pair<int, int>> connections;
+    const auto min_elements =
+      std::min((int)view.flattened_handles().size(), view.count());
+    const int size = view.flattened_handles().size();
+    // find another matching indent before a lower indent is found
+    std::vector<bool> ends;
+    // search 'upwards' first (reverse iterators)
+    for (int indent_index = 0; indent_index < min_elements; ++indent_index) {
+      if (
+        view.flattened_handles()[indent_index + view.offset()].indent_
+        < min_indent) {
+        min_indent =
+          view.flattened_handles()[indent_index + view.offset()].indent_;
+        min_indent_handle =
+          view.flattened_handles()[indent_index + view.offset()].entity_handle_;
+      }
+      int prev_indent_index = indent_index - 1;
+      if (auto rfound = std::find_if(
+            view.flattened_handles().rbegin() + (size - 1)
+              - (view.offset() + prev_indent_index),
+            view.flattened_handles().rend(),
+            [&view, indent_index](const auto& flattened_handle) {
+              return view.flattened_handles()[indent_index + view.offset()]
+                       .indent_
+                  == flattened_handle.indent_;
+            });
+          rfound != view.flattened_handles().rend()) {
+        auto ffound = (rfound + 1).base();
+        auto dist = ffound - view.flattened_handles().begin();
+        if (dist < view.offset()) {
+          if (std::all_of(
+                view.flattened_handles().rbegin() + (size - 1)
+                  - (view.offset() + prev_indent_index),
+                rfound, [&view, indent_index](const auto& flattened_handle) {
+                  return flattened_handle.indent_
+                      >= view.flattened_handles()[indent_index + view.offset()]
+                           .indent_;
+                })) {
+            int range = rfound
+                      - (view.flattened_handles().rbegin() + (size - 1)
+                         - (view.offset() + prev_indent_index));
+            for (int i = 0; i < range; ++i) {
+              int is = prev_indent_index - i;
+              if (is < 0) {
+                break;
+              }
+              connections.push_back(
+                {view.flattened_handles()[indent_index + view.offset()].indent_,
+                 is});
+            }
+          }
+        }
+      }
+      int next_indent_index = indent_index + 1;
+      if (auto found = std::find_if(
+            view.flattened_handles().begin() + view.offset()
+              + next_indent_index,
+            view.flattened_handles().end(),
+            [&view, indent_index](const auto& flattened_handle) {
+              return view.flattened_handles()[indent_index + view.offset()]
+                       .indent_
+                  == flattened_handle.indent_;
+            });
+          found != view.flattened_handles().end()) {
+        if (std::all_of(
+              view.flattened_handles().begin() + next_indent_index
+                + view.offset(),
+              found, [&view, indent_index](const auto& flattened_handle) {
+                return flattened_handle.indent_
+                    >= view.flattened_handles()[indent_index + view.offset()]
+                         .indent_;
+              })) {
+          int range = found
+                    - (view.flattened_handles().begin() + view.offset()
+                       + next_indent_index);
+          for (int i = 0; i < range; i++) {
+            int is = next_indent_index + i;
+            int min = std::min(
+              view.count(),
+              (int)view.flattened_handles().size() - view.offset());
+            if (is >= min) {
+              break;
+            }
+            connections.push_back(
+              {view.flattened_handles()[indent_index + view.offset()].indent_,
+               is});
+          }
+          ends.push_back(false);
+        } else {
+          ends.push_back(true);
+        }
+      } else {
+        ends.push_back(true);
+      }
+    }
+
+    // draw all lines for entities that are offscreen
+    for (int i = min_indent - 1; i >= 0; --i) {
+      bool draw =
+        entities
+          .call_return(
+            min_indent_handle,
+            [&](const hy::entity_t& entity) {
+              // update min indent as we walk backwards right to left
+              min_indent_handle = entity.parent_;
+              return entities
+                .call_return(
+                  entity.parent_,
+                  [&](const hy::entity_t& parent) {
+                    if (parent.parent_ == thh::handle_t()) {
+                      if (auto it = std::find(
+                            root_handles.begin(), root_handles.end(),
+                            entity.parent_);
+                          it != root_handles.end()) {
+                        auto position = it - root_handles.begin();
+                        return position != (root_handles.size() - 1);
+                      }
+                      return false;
+                    }
+                    return entities
+                      .call_return(
+                        parent.parent_,
+                        [&](const hy::entity_t& grandparent) {
+                          if (auto it = std::find(
+                                grandparent.children_.begin(),
+                                grandparent.children_.end(), entity.parent_);
+                              it != grandparent.children_.end()) {
+                            auto position = it - grandparent.children_.begin();
+                            return position
+                                != (grandparent.children_.size() - 1);
+                          }
+                          return false;
+                        })
+                      .value_or(false);
+                  })
+                .value_or(false);
+            })
+          .value_or(false);
+      if (draw) {
+        for (int r = 0; r < view.count(); r++) {
+          display_ops.draw_at_fn(i * 4, r, "\xE2\x94\x82");
+        }
+      }
+    }
+
+    assert(
+      ends.size()
+      == std::min((int)view.flattened_handles().size(), view.count()));
+
+    for (const auto& connection : connections) {
+      display_ops.draw_at_fn(
+        connection.first * 4, connection.second, "\xE2\x94\x82");
+    }
+
+    const int count = std::min(
+      (int)view.flattened_handles().size(), view.offset() + view.count());
+    for (int handle_index = view.offset(); handle_index < count;
+         ++handle_index) {
+      const auto& flattened_handle = view.flattened_handles()[handle_index];
+
+      display_ops.draw_at_fn(
+        flattened_handle.indent_ * 4, handle_index - view.offset(),
+        ends[handle_index - view.offset()]
+          ? "\xE2\x94\x94\xE2\x94\x80\xE2\x94\x80 "
+          : "\xE2\x94\x9C\xE2\x94\x80\xE2\x94\x80 ");
+
+      if (handle_index == view.selected()) {
+        display_ops.set_invert_fn(true);
+      }
+      if (collapser.collapsed(flattened_handle.entity_handle_)) {
+        display_ops.set_bold_fn(true);
+      }
+      entities.call(flattened_handle.entity_handle_, [&](const auto& entity) {
+        display_ops.draw_fn(entity.name_);
+      });
+      display_ops.set_invert_fn(false);
+      display_ops.set_bold_fn(false);
+    }
+  }
+
   void display_hierarchy(
     const thh::container_t<hy::entity_t>& entities,
     const interaction_t& interaction,

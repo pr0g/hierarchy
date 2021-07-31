@@ -15,7 +15,7 @@ BraceWrapping:
     AfterFunction: false
     SplitEmptyFunction: false
     SplitEmptyRecord: false
-ColumnLimit: 100
+ColumnLimit: 80
 IndentWidth: 2
 ContinuationIndentWidth: 2
 ConstructorInitializerIndentWidth: 2

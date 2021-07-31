@@ -191,7 +191,7 @@ namespace hy {
       });
     }
 
-    const std::vector<flattened_handle>& flattened_handles() {
+    const std::vector<flattened_handle>& flattened_handles() const {
       return flattened_handles_;
     }
 
@@ -225,6 +225,18 @@ namespace hy {
     record,
     go_to
   };
+
+  struct display_ops_t {
+    std::function<void(bool)> set_bold_fn;
+    std::function<void(bool)> set_invert_fn;
+    std::function<void(int, int, std::string_view)> draw_at_fn;
+    std::function<void(std::string_view)> draw_fn;
+  };
+
+  void display_scrollable_hierarchy(
+    const thh::container_t<hy::entity_t>& entities,
+    const std::vector<thh::handle_t>& root_handles, const view_t& view,
+    const collapser_t& collapser, const display_ops_t& display_ops);
 
   //////////////////////////////////////////////////////////////////////////////
 
