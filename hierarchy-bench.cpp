@@ -76,6 +76,6 @@ static void expand_entity(benchmark::State& state) {
   }
 }
 
-BENCHMARK(expand_entity)->Range(100, 1<<22)->Complexity();;
+BENCHMARK(expand_entity)->Range(100, 1<<22);
 
 BENCHMARK_MAIN();
