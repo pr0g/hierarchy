@@ -20,19 +20,21 @@ option(HIERARCHY_DEMO "Builds simple terminal example of hierarchy" OFF)
 option(HIERARCHY_TEST "Builds unit tests for hierarchy library" OFF)
 option(HIERARCHY_BENCH "Builds benchmarks for hierarchy library" OFF)
 
-if (${HIERARCHY_DEMO})
-  if (${CMAKE_HOST_APPLE})
-    find_package(Curses)
+find_package(Curses)
 
+if (${HIERARCHY_DEMO})
+  add_executable(${PROJECT_NAME}-scroll-demo)
+  target_sources(${PROJECT_NAME}-scroll-demo PRIVATE main-scroll.cpp)
+  target_compile_features(${PROJECT_NAME}-scroll-demo PRIVATE cxx_std_17)
+  target_link_libraries(
+    ${PROJECT_NAME}-scroll-demo $<$<PLATFORM_ID:Linux>:ncursesw>
+    $<$<PLATFORM_ID:Darwin>:ncurses> $<$<PLATFORM_ID:Windows>:pdcurses>
+    ${PROJECT_NAME})
+
+  if (${CMAKE_HOST_APPLE})
     add_executable(${PROJECT_NAME}-demo)
     target_sources(${PROJECT_NAME}-demo PRIVATE main-macos.cpp)
     target_link_libraries(${PROJECT_NAME}-demo PRIVATE Curses ${PROJECT_NAME})
-
-    add_executable(${PROJECT_NAME}-scroll-demo)
-    target_sources(${PROJECT_NAME}-scroll-demo PRIVATE main-scroll-macos.cpp)
-    target_link_libraries(${PROJECT_NAME}-scroll-demo PRIVATE Curses
-                                                              ${PROJECT_NAME})
-    target_compile_features(${PROJECT_NAME}-scroll-demo PRIVATE cxx_std_17)
 
     add_executable(scroll-demo)
     target_sources(scroll-demo PRIVATE main-scroll-simple-macos.cpp)
@@ -41,13 +43,8 @@ if (${HIERARCHY_DEMO})
   endif ()
 
   if (${CMAKE_HOST_WIN32})
-    add_executable(${PROJECT_NAME}-scroll-demo)
-    target_sources(${PROJECT_NAME}-scroll-demo PRIVATE main-scroll-macos.cpp)
-    target_link_libraries(${PROJECT_NAME}-scroll-demo PRIVATE pdcurses
-                                                              ${PROJECT_NAME})
     target_link_directories(${PROJECT_NAME}-scroll-demo PRIVATE
                             ${CMAKE_SOURCE_DIR}/third-party/pdcurses)
-    target_compile_features(${PROJECT_NAME}-scroll-demo PRIVATE cxx_std_17)
     target_link_options(${PROJECT_NAME}-scroll-demo PRIVATE
                         "/NODEFAULTLIB:LIBCMT")
   endif ()
