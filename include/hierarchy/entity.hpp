@@ -137,7 +137,7 @@ namespace hy {
         const auto child_count = hy::expanded_count(
           flattened_handles_[selected_].entity_handle_, entities, collapser);
         flattened_handles_.insert(
-          flattened_handles_.begin() + selected_ + child_count - 1,
+          flattened_handles_.begin() + std::min(selected_ + child_count - 1, (int)flattened_handles_.size()),
           {next_handle, flattened_handles_[selected_].indent_ + 1});
       }
     }

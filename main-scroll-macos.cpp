@@ -2,12 +2,16 @@
 
 #include <algorithm>
 #include <locale.h>
-#include <ncurses.h>
 #include <optional>
-#include <panel.h>
 #include <stack>
 #include <string.h>
 #include <utility>
+
+#ifdef _WIN32
+#include "third-party/pdcurses/curses.h"
+#elif defined(__unix__) || defined(__APPLE__)
+#include <ncurses.h>
+#endif
 
 int main(int argc, char** argv) {
   thh::container_t<hy::entity_t> entities;

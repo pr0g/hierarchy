@@ -370,29 +370,26 @@ namespace hy {
     thh::handle_t min_indent_handle;
 
     std::vector<std::pair<int, int>> connections;
-    const auto min_elements =
-      std::min((int)view.flattened_handles().size(), view.count());
-    const int size = view.flattened_handles().size();
+    const int total_handles = view.flattened_handles().size();
+    const int min_handles =
+      std::min(total_handles - view.offset(), view.count());
     // find another matching indent before a lower indent is found
     std::vector<bool> ends;
     // search 'upwards' first (reverse iterators)
-    for (int indent_index = 0; indent_index < min_elements; ++indent_index) {
-      if (
-        view.flattened_handles()[indent_index + view.offset()].indent_
-        < min_indent) {
-        min_indent =
-          view.flattened_handles()[indent_index + view.offset()].indent_;
-        min_indent_handle =
-          view.flattened_handles()[indent_index + view.offset()].entity_handle_;
+    for (int indent_index = 0; indent_index < min_handles; ++indent_index) {
+      const int row_index =
+        std::min(indent_index + view.offset(), total_handles);
+      if (view.flattened_handles()[row_index].indent_ < min_indent) {
+        min_indent = view.flattened_handles()[row_index].indent_;
+        min_indent_handle = view.flattened_handles()[row_index].entity_handle_;
       }
-      int prev_indent_index = indent_index - 1;
+      const int prev_indent_index = indent_index - 1;
       if (auto rfound = std::find_if(
-            view.flattened_handles().rbegin() + (size - 1)
+            view.flattened_handles().rbegin() + (total_handles - 1)
               - (view.offset() + prev_indent_index),
             view.flattened_handles().rend(),
-            [&view, indent_index](const auto& flattened_handle) {
-              return view.flattened_handles()[indent_index + view.offset()]
-                       .indent_
+            [&view, row_index](const auto& flattened_handle) {
+              return view.flattened_handles()[row_index].indent_
                   == flattened_handle.indent_;
             });
           rfound != view.flattened_handles().rend()) {
@@ -400,15 +397,14 @@ namespace hy {
         auto dist = ffound - view.flattened_handles().begin();
         if (dist < view.offset()) {
           if (std::all_of(
-                view.flattened_handles().rbegin() + (size - 1)
+                view.flattened_handles().rbegin() + (total_handles - 1)
                   - (view.offset() + prev_indent_index),
-                rfound, [&view, indent_index](const auto& flattened_handle) {
+                rfound, [&view, row_index](const auto& flattened_handle) {
                   return flattened_handle.indent_
-                      >= view.flattened_handles()[indent_index + view.offset()]
-                           .indent_;
+                      >= view.flattened_handles()[row_index].indent_;
                 })) {
             int range = rfound
-                      - (view.flattened_handles().rbegin() + (size - 1)
+                      - (view.flattened_handles().rbegin() + (total_handles - 1)
                          - (view.offset() + prev_indent_index));
             for (int i = 0; i < range; ++i) {
               int is = prev_indent_index - i;
@@ -416,34 +412,30 @@ namespace hy {
                 break;
               }
               connections.push_back(
-                {view.flattened_handles()[indent_index + view.offset()].indent_,
-                 is});
+                {view.flattened_handles()[row_index].indent_, is});
             }
           }
         }
       }
-      int next_indent_index = indent_index + 1;
+      const int next_indent_index = indent_index + 1;
+      const int next_row_index =
+        std::min(view.offset() + next_indent_index, total_handles);
       if (auto found = std::find_if(
-            view.flattened_handles().begin() + view.offset()
-              + next_indent_index,
+            view.flattened_handles().begin() + next_row_index,
             view.flattened_handles().end(),
-            [&view, indent_index](const auto& flattened_handle) {
-              return view.flattened_handles()[indent_index + view.offset()]
-                       .indent_
+            [&view, row_index](const auto& flattened_handle) {
+              return view.flattened_handles()[row_index].indent_
                   == flattened_handle.indent_;
             });
           found != view.flattened_handles().end()) {
         if (std::all_of(
-              view.flattened_handles().begin() + next_indent_index
-                + view.offset(),
-              found, [&view, indent_index](const auto& flattened_handle) {
+              view.flattened_handles().begin() + next_row_index, found,
+              [&view, row_index](const auto& flattened_handle) {
                 return flattened_handle.indent_
-                    >= view.flattened_handles()[indent_index + view.offset()]
-                         .indent_;
+                    >= view.flattened_handles()[row_index].indent_;
               })) {
-          int range = found
-                    - (view.flattened_handles().begin() + view.offset()
-                       + next_indent_index);
+          const int range =
+            found - (view.flattened_handles().begin() + next_row_index);
           for (int i = 0; i < range; i++) {
             int is = next_indent_index + i;
             int min = std::min(
@@ -453,8 +445,7 @@ namespace hy {
               break;
             }
             connections.push_back(
-              {view.flattened_handles()[indent_index + view.offset()].indent_,
-               is});
+              {view.flattened_handles()[row_index].indent_, is});
           }
           ends.push_back(false);
         } else {
@@ -514,9 +505,7 @@ namespace hy {
       }
     }
 
-    assert(
-      ends.size()
-      == std::min((int)view.flattened_handles().size(), view.count()));
+    assert(ends.size() == std::min(min_handles, view.count()));
 
     for (const auto& connection : connections) {
       display_ops.draw_at_fn(
