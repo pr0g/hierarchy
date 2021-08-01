@@ -202,19 +202,4 @@ TEST_CASE("Hierarchy Traversal") {
     CHECK(interaction.element() == 1);
     CHECK(interaction.siblings() == root_handles);
   }
-
-  SUBCASE("root_handle") {
-    auto root_handle = hy::root_handle(thh::handle_t(10, 0), entities);
-
-    auto flattened = hy::flatten_entities(entities, collapser, root_handles);
-    const auto entity_handle = flattened[4].entity_handle_;
-    int count = hy::expanded_count(entity_handle, entities, collapser);
-    interaction.collapse(entity_handle, entities);
-    flattened.erase(flattened.begin() + 1 + 4, flattened.begin() + 4 + count);
-    auto selected =
-      hy::go_to_entity(thh::handle_t(10, 0), entities, collapser, flattened);
-
-    int i;
-    i = 0;
-  }
 }
