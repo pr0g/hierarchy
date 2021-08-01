@@ -362,6 +362,132 @@ namespace hy {
     return -1;
   }
 
+  view_t::view_t(
+    std::vector<flattened_handle> flattened_handles, const int offset,
+    const int count)
+    : flattened_handles_(std::move(flattened_handles)), offset_(offset),
+      count_(count) {}
+
+  void view_t::move_up() {
+    selected_ = std::max(selected_ - 1, 0);
+    if (selected_ - offset_ + 1 == 0) {
+      offset_ = std::max(offset_ - 1, 0);
+    }
+  }
+
+  void view_t::move_down() {
+    const int min_offset = std::max((int)flattened_handles_.size() - count_, 0);
+    selected_ = std::min(selected_ + 1, (int)flattened_handles_.size() - 1);
+    if (selected_ - count_ - offset_ == 0) {
+      offset_ = std::min(offset_ + 1, min_offset);
+    }
+  }
+
+  void view_t::collapse(
+    const thh::container_t<hy::entity_t>& entities, collapser_t& collapser) {
+    const auto entity_handle = flattened_handles_[selected_].entity_handle_;
+    int count = hy::expanded_count(entity_handle, entities, collapser);
+    collapser.collapse(entity_handle, entities);
+    flattened_handles_.erase(
+      flattened_handles_.begin() + selected_ + 1,
+      flattened_handles_.begin() + selected_ + count);
+  }
+
+  void view_t::expand(
+    const thh::container_t<hy::entity_t>& entities, collapser_t& collapser) {
+    const auto entity_handle = flattened_handles_[selected_].entity_handle_;
+    if (collapser.collapsed(entity_handle)) {
+      collapser.expand(entity_handle);
+      auto handles = hy::flatten_entity(
+        entity_handle, flattened_handles_[selected_].indent_, entities,
+        collapser);
+      flattened_handles_.insert(
+        flattened_handles_.begin() + selected_ + 1, handles.begin() + 1,
+        handles.end());
+    }
+  }
+
+  void view_t::goto_recorded_handle(
+    const thh::container_t<hy::entity_t>& entities, collapser_t& collapser) {
+    if (recorded_handle_ != thh::handle_t()) {
+      selected_ =
+        hy::go_to_entity(recorded_handle_, entities, collapser, flattened_handles_);
+      offset_ = selected_;
+    }
+  }
+
+  void view_t::record_handle() {
+    recorded_handle_ = flattened_handles_[selected_].entity_handle_;
+  }
+
+  void view_t::add_child(
+    thh::container_t<hy::entity_t>& entities, collapser_t& collapser) {
+    if (!collapser.collapsed(flattened_handles_[selected_].entity_handle_)) {
+      auto next_handle = entities.add();
+      entities.call(next_handle, [next_handle](auto& entity) {
+        entity.name_ = std::string("entity_") + std::to_string(next_handle.id_);
+      });
+      hy::add_children(
+        flattened_handles_[selected_].entity_handle_, {next_handle}, entities);
+      const auto child_count = hy::expanded_count(
+        flattened_handles_[selected_].entity_handle_, entities, collapser);
+      flattened_handles_.insert(
+        flattened_handles_.begin()
+          + std::min(
+            selected_ + child_count - 1, (int)flattened_handles_.size()),
+        {next_handle, flattened_handles_[selected_].indent_ + 1});
+    }
+  }
+
+  void view_t::add_sibling(
+      thh::container_t<hy::entity_t>& entities, collapser_t& collapser,
+      std::vector<thh::handle_t>& root_handles) {
+      auto current_handle = flattened_handles_[selected_].entity_handle_;
+      auto next_handle = entities.add();
+      entities.call(next_handle, [next_handle](auto& entity) {
+        entity.name_ = std::string("entity_") + std::to_string(next_handle.id_);
+      });
+      const auto siblings =
+        hy::siblings(current_handle, entities, root_handles);
+
+      int sibling_offset = 0;
+      int siblings_left = 0;
+      if (auto sibling_it =
+            std::find(siblings.begin(), siblings.end(), current_handle);
+          sibling_it != siblings.end()) {
+        sibling_offset = sibling_it - siblings.begin();
+        siblings_left = siblings.size() - sibling_offset;
+      }
+
+      int child_count = 0;
+      for (int i = sibling_offset; i < siblings.size(); ++i) {
+        child_count += hy::expanded_count(siblings[i], entities, collapser) - 1;
+      }
+
+      flattened_handles_.insert(
+        flattened_handles_.begin() + selected_ + child_count + siblings_left,
+        {next_handle, flattened_handles_[selected_].indent_});
+
+      entities.call(current_handle, [&](hy::entity_t& entity) {
+        auto parent_handle =
+          entities
+            .call_return(
+              entity.parent_,
+              [&](hy::entity_t& parent_entity) {
+                parent_entity.children_.push_back(next_handle);
+                return entity.parent_;
+              })
+            .value_or(thh::handle_t());
+        if (parent_handle != thh::handle_t()) {
+          entities.call(next_handle, [parent_handle](hy::entity_t& entity) {
+            entity.parent_ = parent_handle;
+          });
+        } else {
+          root_handles.push_back(next_handle);
+        }
+      });
+    }
+
   void display_scrollable_hierarchy(
     const thh::container_t<hy::entity_t>& entities,
     const std::vector<thh::handle_t>& root_handles, const view_t& view,

@@ -82,7 +82,7 @@ int main(int argc, char** argv) {
         view.expand(entities, collapser);
         break;
       case 'g':
-        view.goto_handle(entities, collapser);
+        view.goto_recorded_handle(entities, collapser);
         break;
       case 'r':
         view.record_handle();
