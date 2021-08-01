@@ -16,6 +16,7 @@
 int main(int argc, char** argv) {
   thh::container_t<hy::entity_t> entities;
   auto root_handles = demo::create_sample_entities(entities);
+  // auto root_handles = demo::create_bench_entities(entities, 5, 10000);
 
   // enable support for unicode characters
   setlocale(LC_CTYPE, "");
