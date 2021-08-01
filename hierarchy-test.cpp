@@ -229,6 +229,32 @@ TEST_CASE("Scrollable Hierarchy Traversal") {
   hy::view_t view(
     hy::flatten_entities(entities, collapser, root_handles), 0, 10);
 
+  SUBCASE("single entity can be deleted") {
+    view.remove(entities, collapser, root_handles);
+    CHECK(view.flattened_handles().empty());
+    CHECK(root_handles.empty());
+    CHECK(entities.size() == 0);
+
+    SUBCASE("no entities gives empty selection") {
+      CHECK(view.selected_handle() == thh::handle_t());
+    }
+
+    SUBCASE("sibling can be added when there are no entities") {
+      const auto added = view.add_sibling(entities, collapser, root_handles);
+
+      CHECK(added.index_ == 0);
+      CHECK(added.flattened_handle_.indent_ == 0);
+
+      CHECK(view.selected_index() == 0);
+      CHECK(view.selected_handle() == root_handles.front());
+    }
+
+    SUBCASE("child cannot be added when there are no entities") {
+      const auto added = view.add_child(entities, collapser);
+      CHECK(added == std::nullopt);
+    }
+  }
+
   SUBCASE("single entity is selected entity") {
     CHECK(view.selected_index() == 0);
     CHECK(view.selected_handle() == root_handles.front());

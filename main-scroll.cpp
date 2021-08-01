@@ -93,6 +93,9 @@ int main(int argc, char** argv) {
       case 's':
         view.add_sibling(entities, collapser, root_handles);
         break;
+      case 'd':
+        view.remove(entities, collapser, root_handles);
+        break;
       default:
         // noop
         break;

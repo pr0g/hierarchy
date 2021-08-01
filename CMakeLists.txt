@@ -9,7 +9,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(thh_handles)
 
 add_library(${PROJECT_NAME})
-target_sources(${PROJECT_NAME} PRIVATE src/entity.cpp)
+target_sources(${PROJECT_NAME} PRIVATE src/entity.cpp src/entity-old.cpp)
 target_include_directories(
   ${PROJECT_NAME}
   PUBLIC

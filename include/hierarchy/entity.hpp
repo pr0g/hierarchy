@@ -54,7 +54,12 @@ namespace hy {
     int32_t index_;
   };
 
-  int go_to_entity(
+  struct indent_tracker_t {
+    int indent_ = 0;
+    int count_ = 0;
+  };
+
+  std::optional<int> go_to_entity(
     thh::handle_t entity_handle, const thh::container_t<hy::entity_t>& entities,
     collapser_t& collapser, std::vector<flattened_handle_t>& flattened_handles);
 
@@ -67,6 +72,10 @@ namespace hy {
     const thh::container_t<hy::entity_t>& entities,
     const collapser_t& collapser,
     const std::vector<thh::handle_t>& root_handles);
+
+  std::vector<thh::handle_t> entity_and_descendants(
+    thh::handle_t entity_handle,
+    const thh::container_t<hy::entity_t>& entities);
 
   // view into the collection of entities
   struct view_t {
@@ -83,11 +92,15 @@ namespace hy {
     void goto_recorded_handle(
       const thh::container_t<hy::entity_t>& entities, collapser_t& collapser);
     void record_handle();
+    void clear_recorded_handle();
     thh::handle_t recorded_handle() const { return recorded_handle_; }
 
     std::optional<flattened_handle_position_t> add_child(
       thh::container_t<hy::entity_t>& entities, collapser_t& collapser);
     flattened_handle_position_t add_sibling(
+      thh::container_t<hy::entity_t>& entities, collapser_t& collapser,
+      std::vector<thh::handle_t>& root_handles);
+    void remove(
       thh::container_t<hy::entity_t>& entities, collapser_t& collapser,
       std::vector<thh::handle_t>& root_handles);
 
@@ -97,19 +110,16 @@ namespace hy {
 
     int offset() const { return offset_; }
     int count() const { return count_; }
-    int selected_index() const { return selected_; }
-    int selected_indent() const {
-      return flattened_handles_[selected_].indent_;
-    }
-    thh::handle_t selected_handle() const {
-      return flattened_handles_[selected_].entity_handle_;
-    }
+
+    thh::handle_t selected_handle() const;
+    std::optional<int> selected_index() const;
+    std::optional<int> selected_indent() const;
 
   private:
     std::vector<flattened_handle_t> flattened_handles_;
     int offset_ = 0;
-    int selected_ = 0;
     int count_ = 20;
+    std::optional<int> selected_ = 0;
     thh::handle_t recorded_handle_;
   };
 
