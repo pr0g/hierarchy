@@ -203,3 +203,26 @@ TEST_CASE("Hierarchy Traversal") {
     CHECK(interaction.siblings() == root_handles);
   }
 }
+
+// hy::display_ops_t display_ops;
+// display_ops.set_bold_fn = [](const bool bold) {
+// };
+// display_ops.set_invert_fn = [](const bool invert) {
+// };
+// display_ops.draw_fn = [](const std::string_view str) {
+// };
+// display_ops.draw_at_fn =
+//   [](const int x, const int y, const std::string_view str) {
+//   };
+
+TEST_CASE("Scrollable Hierarchy Traversal") {
+  thh::container_t<hy::entity_t> entities;
+  auto root_handles = demo::create_sample_entities(entities);
+
+  hy::collapser_t collapser;
+
+  hy::view_t view(
+    hy::flatten_entities(entities, collapser, root_handles), 0, 10);
+
+  SUBCASE("") {}
+}
