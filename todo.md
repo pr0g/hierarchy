@@ -3,16 +3,21 @@
 ## display
 
 - test rendering with Dear ImGui
-- test rendering with Qt
+- ~~test rendering with Qt~~
 - add `end_display` function to be called in `indent == 0` block
   - use to call tree pop function
 
 ## operation
 
-- add ability to add a neighbor/peer entity
+- ~~add ability to add a neighbor/peer/sibling entity~~
 - add ability to delete an entity
-- don't allow adding children to collapsed entities
+- ~~don't allow adding children to collapsed entities~~
 
 ## other
 
-- add `#define` for building demo app
+- ~~add `#define` for building demo app~~
+
+## tests
+
+- add last element crash
+- lookup + view.offset being out of range

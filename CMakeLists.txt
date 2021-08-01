@@ -59,6 +59,17 @@ if (${HIERARCHY_TEST})
     GIT_TAG f0ab4e793fa863d4a5929ff263ddd3bebec8767e)
   FetchContent_MakeAvailable(doctest)
   target_link_libraries(${PROJECT_NAME}-test PRIVATE ${PROJECT_NAME} doctest)
+
+  enable_testing()
+  add_test(NAME ${PROJECT_NAME}-test COMMAND ${PROJECT_NAME}-test)
+  set(args -C Debug)
+  add_custom_command(
+    TARGET ${PROJECT_NAME}-test
+    POST_BUILD
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failures
+            "$<$<PLATFORM_ID:Windows>:${args}>"
+    COMMAND_EXPAND_LISTS)
 endif ()
 
 if (${HIERARCHY_BENCH})

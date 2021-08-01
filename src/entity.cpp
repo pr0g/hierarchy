@@ -220,11 +220,11 @@ namespace hy {
     int count_ = 0;
   };
 
-  std::vector<flattened_handle> flatten_entity(
+  std::vector<flattened_handle_t> flatten_entity(
     const thh::handle_t entity_handle, const int indent,
     const thh::container_t<hy::entity_t>& entities,
     const collapser_t& collapser) {
-    std::vector<flattened_handle> flattened;
+    std::vector<flattened_handle_t> flattened;
     std::deque<indent_tracker_t> indent_tracker(1, {indent, 1});
     std::vector<thh::handle_t> handles(1, entity_handle);
     while (!handles.empty()) {
@@ -239,7 +239,7 @@ namespace hy {
       }
 
       const auto handle = handles.back();
-      flattened.push_back(flattened_handle{handle, curr_indent});
+      flattened.push_back(flattened_handle_t{handle, curr_indent});
       handles.pop_back();
       entities.call(handle, [&](const auto& entity) {
         if (!entity.children_.empty() && !collapser.collapsed(handle)) {
@@ -253,11 +253,11 @@ namespace hy {
     return flattened;
   }
 
-  std::vector<flattened_handle> flatten_entities(
+  std::vector<flattened_handle_t> flatten_entities(
     const thh::container_t<hy::entity_t>& entities,
     const collapser_t& collapser,
     const std::vector<thh::handle_t>& root_handles) {
-    std::vector<flattened_handle> flattened;
+    std::vector<flattened_handle_t> flattened;
     for (const auto root_handle : root_handles) {
       auto flattened_entity =
         flatten_entity(root_handle, 0, entities, collapser);
@@ -321,11 +321,11 @@ namespace hy {
   int go_to_entity(
     const thh::handle_t entity_handle,
     const thh::container_t<hy::entity_t>& entities, collapser_t& collapser,
-    std::vector<flattened_handle>& flattened_handles) {
+    std::vector<flattened_handle_t>& flattened_handles) {
     // might not be found if collapsed
     if (auto handle_it = std::find_if(
           flattened_handles.cbegin(), flattened_handles.cend(),
-          [entity_handle](const flattened_handle& flattened_handle) {
+          [entity_handle](const flattened_handle_t& flattened_handle) {
             return flattened_handle.entity_handle_ == entity_handle;
           });
         handle_it != flattened_handles.cend()) {
@@ -338,7 +338,7 @@ namespace hy {
     int collapsed_parent_offset =
       std::find_if(
         flattened_handles.cbegin(), flattened_handles.cend(),
-        [collapsed_parent](const flattened_handle& flattened_handle) {
+        [collapsed_parent](const flattened_handle_t& flattened_handle) {
           return flattened_handle.entity_handle_ == collapsed_parent;
         })
       - flattened_handles.cbegin();
@@ -352,7 +352,7 @@ namespace hy {
 
     if (auto handle_it = std::find_if(
           flattened_handles.cbegin(), flattened_handles.cend(),
-          [entity_handle](const flattened_handle& flattened_handle) {
+          [entity_handle](const flattened_handle_t& flattened_handle) {
             return flattened_handle.entity_handle_ == entity_handle;
           });
         handle_it != flattened_handles.cend()) {
@@ -363,7 +363,7 @@ namespace hy {
   }
 
   view_t::view_t(
-    std::vector<flattened_handle> flattened_handles, const int offset,
+    std::vector<flattened_handle_t> flattened_handles, const int offset,
     const int count)
     : flattened_handles_(std::move(flattened_handles)), offset_(offset),
       count_(count) {}
@@ -420,7 +420,7 @@ namespace hy {
     recorded_handle_ = flattened_handles_[selected_].entity_handle_;
   }
 
-  void view_t::add_child(
+  std::optional<flattened_handle_position_t> view_t::add_child(
     thh::container_t<hy::entity_t>& entities, collapser_t& collapser) {
     if (!collapser.collapsed(flattened_handles_[selected_].entity_handle_)) {
       auto next_handle = entities.add();
@@ -431,15 +431,19 @@ namespace hy {
         flattened_handles_[selected_].entity_handle_, {next_handle}, entities);
       const auto child_count = hy::expanded_count(
         flattened_handles_[selected_].entity_handle_, entities, collapser);
-      flattened_handles_.insert(
+      const auto inserted = flattened_handles_.insert(
         flattened_handles_.begin()
           + std::min(
             selected_ + child_count - 1, (int)flattened_handles_.size()),
         {next_handle, flattened_handles_[selected_].indent_ + 1});
+
+      return flattened_handle_position_t{
+        *inserted, int32_t(inserted - flattened_handles_.begin())};
     }
+    return {};
   }
 
-  void view_t::add_sibling(
+  flattened_handle_position_t view_t::add_sibling(
     thh::container_t<hy::entity_t>& entities, collapser_t& collapser,
     std::vector<thh::handle_t>& root_handles) {
     auto current_handle = flattened_handles_[selected_].entity_handle_;
@@ -463,7 +467,7 @@ namespace hy {
       child_count += hy::expanded_count(siblings[i], entities, collapser) - 1;
     }
 
-    flattened_handles_.insert(
+    const auto inserted = flattened_handles_.insert(
       flattened_handles_.begin() + selected_ + child_count + siblings_left,
       {next_handle, flattened_handles_[selected_].indent_});
 
@@ -484,6 +488,9 @@ namespace hy {
         root_handles.push_back(next_handle);
       }
     });
+
+    return flattened_handle_position_t{
+      *inserted, int32_t(inserted - flattened_handles_.begin())};
   }
 
   void display_scrollable_hierarchy(
@@ -648,7 +655,7 @@ namespace hy {
           ? "\xE2\x94\x94\xE2\x94\x80\xE2\x94\x80 "
           : "\xE2\x94\x9C\xE2\x94\x80\xE2\x94\x80 ");
 
-      if (handle_index == view.selected()) {
+      if (handle_index == view.selected_index()) {
         display_ops.set_invert_fn(true);
       }
       if (collapser.collapsed(flattened_handle.entity_handle_)) {

@@ -44,21 +44,26 @@ namespace hy {
     const thh::container_t<hy::entity_t>& entities,
     const collapser_t& collapser);
 
-  struct flattened_handle {
+  struct flattened_handle_t {
     thh::handle_t entity_handle_;
     int32_t indent_;
   };
 
+  struct flattened_handle_position_t {
+    flattened_handle_t flattened_handle_;
+    int32_t index_;
+  };
+
   int go_to_entity(
     thh::handle_t entity_handle, const thh::container_t<hy::entity_t>& entities,
-    collapser_t& collapser, std::vector<flattened_handle>& flattened_handles);
+    collapser_t& collapser, std::vector<flattened_handle_t>& flattened_handles);
 
-  std::vector<flattened_handle> flatten_entity(
+  std::vector<flattened_handle_t> flatten_entity(
     thh::handle_t entity_handle, int indent,
     const thh::container_t<hy::entity_t>& entities,
     const collapser_t& collapser);
 
-  std::vector<flattened_handle> flatten_entities(
+  std::vector<flattened_handle_t> flatten_entities(
     const thh::container_t<hy::entity_t>& entities,
     const collapser_t& collapser,
     const std::vector<thh::handle_t>& root_handles);
@@ -66,7 +71,7 @@ namespace hy {
   // view into the collection of entities
   struct view_t {
     view_t(
-      std::vector<flattened_handle> flattened_handles, int offset, int count);
+      std::vector<flattened_handle_t> flattened_handles, int offset, int count);
 
     void move_up();
     void move_down();
@@ -80,22 +85,28 @@ namespace hy {
     void record_handle();
     thh::handle_t recorded_handle() const { return recorded_handle_; }
 
-    void add_child(
+    std::optional<flattened_handle_position_t> add_child(
       thh::container_t<hy::entity_t>& entities, collapser_t& collapser);
-    void add_sibling(
+    flattened_handle_position_t add_sibling(
       thh::container_t<hy::entity_t>& entities, collapser_t& collapser,
       std::vector<thh::handle_t>& root_handles);
 
-    const std::vector<flattened_handle>& flattened_handles() const {
+    const std::vector<flattened_handle_t>& flattened_handles() const {
       return flattened_handles_;
     }
 
     int offset() const { return offset_; }
     int count() const { return count_; }
-    int selected() const { return selected_; }
+    int selected_index() const { return selected_; }
+    int selected_indent() const {
+      return flattened_handles_[selected_].indent_;
+    }
+    thh::handle_t selected_handle() const {
+      return flattened_handles_[selected_].entity_handle_;
+    }
 
   private:
-    std::vector<flattened_handle> flattened_handles_;
+    std::vector<flattened_handle_t> flattened_handles_;
     int offset_ = 0;
     int selected_ = 0;
     int count_ = 20;

@@ -217,12 +217,78 @@ TEST_CASE("Hierarchy Traversal") {
 
 TEST_CASE("Scrollable Hierarchy Traversal") {
   thh::container_t<hy::entity_t> entities;
-  auto root_handles = demo::create_sample_entities(entities);
+
+  const auto handle = entities.add();
+  entities.call(handle, [handle](auto& entity) {
+    entity.name_ = std::string("entity_") + std::to_string(handle.id_);
+  });
 
   hy::collapser_t collapser;
+  std::vector<thh::handle_t> root_handles(1, handle);
 
   hy::view_t view(
     hy::flatten_entities(entities, collapser, root_handles), 0, 10);
 
-  SUBCASE("") {}
+  SUBCASE("single entity is selected entity") {
+    CHECK(view.selected_index() == 0);
+    CHECK(view.selected_handle() == root_handles.front());
+  }
+
+  SUBCASE("single entity move up has no effect") {
+    view.move_up();
+
+    CHECK(view.selected_index() == 0);
+    CHECK(view.selected_handle() == root_handles.front());
+  }
+
+  SUBCASE("single entity move down has no effect") {
+    view.move_down();
+
+    CHECK(view.selected_index() == 0);
+    CHECK(view.selected_handle() == root_handles.front());
+  }
+
+  SUBCASE("child added with correct offset and indentation") {
+    const auto added = view.add_child(entities, collapser);
+
+    CHECK(added->flattened_handle_.indent_ == 1);
+    CHECK(added->index_ == 1);
+
+    SUBCASE("move down moves to child entity") {
+      view.move_down();
+
+      CHECK(view.selected_handle() == added->flattened_handle_.entity_handle_);
+      CHECK(view.selected_indent() == added->flattened_handle_.indent_);
+      CHECK(view.selected_index() == added->index_);
+    }
+
+    SUBCASE("collapse parent and move down has no effect") {
+      view.collapse(entities, collapser);
+      view.move_down();
+
+      CHECK(view.selected_index() == 0);
+      CHECK(view.selected_handle() == root_handles.front());
+    }
+
+    SUBCASE("collapse reduces size of flattened_handles") {
+      CHECK(view.flattened_handles().size() == 2);
+      view.collapse(entities, collapser);
+      CHECK(view.flattened_handles().size() == 1);
+    }
+
+    SUBCASE("sibling added below child") {
+      const auto added = view.add_sibling(entities, collapser, root_handles);
+
+      CHECK(added.index_ == 2);
+      CHECK(added.flattened_handle_.indent_ == 0);
+
+      SUBCASE("sibling added below added sibling") {
+        const auto added_again =
+          view.add_sibling(entities, collapser, root_handles);
+
+        CHECK(added_again.index_ == 3);
+        CHECK(added_again.flattened_handle_.indent_ == 0);
+      }
+    }
+  }
 }
