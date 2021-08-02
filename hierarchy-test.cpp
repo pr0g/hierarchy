@@ -255,6 +255,22 @@ TEST_CASE("Scrollable Hierarchy Traversal") {
     }
   }
 
+  SUBCASE(
+    "offset updated to show last handle if all handles are deleted offscree") {
+      for (int i = 0; i < 10; ++i) {
+        view.add_sibling(entities, collapser, root_handles);
+      }
+      for (int i = 0; i < 10; ++i) {
+        view.move_down();
+      }
+      CHECK(view.offset() == 1);
+      for (int i = 0; i < 10; ++i) {
+        view.remove(entities, collapser, root_handles);
+      }
+      // should have moved offset back to 0 to show last remaining handle
+      CHECK(view.offset() == 0);
+    }
+
   SUBCASE("single entity is selected entity") {
     CHECK(view.selected_index() == 0);
     CHECK(view.selected_handle() == root_handles.front());

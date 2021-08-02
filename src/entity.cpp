@@ -474,6 +474,7 @@ namespace hy {
         flattened_handles_.begin() + *selected_index() + expanded_count);
 
       selected_ = std::min((int)flattened_handles_.size() - 1, *selected_);
+      offset_ = std::min(std::max((int)flattened_handles_.size() - 1, 0), offset_);
     }
 
     // todo - need to also remove from collapsed
