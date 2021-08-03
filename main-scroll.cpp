@@ -34,24 +34,28 @@ int main(int argc, char** argv) {
   // }
 
   hy::display_ops_t display_ops;
-  display_ops.set_bold_fn = [](const bool bold) {
+  display_ops.connection_ = "\xE2\x94\x82";
+  display_ops.end_ = "\xE2\x94\x94\xE2\x94\x80\xE2\x94\x80 ";
+  display_ops.mid_ = "\xE2\x94\x9C\xE2\x94\x80\xE2\x94\x80 ";
+
+  display_ops.set_bold_fn_ = [](const bool bold) {
     if (bold) {
       attron(A_BOLD);
     } else {
       attroff(A_BOLD);
     }
   };
-  display_ops.set_invert_fn = [](const bool invert) {
+  display_ops.set_invert_fn_ = [](const bool invert) {
     if (invert) {
       attron(A_REVERSE);
     } else {
       attroff(A_REVERSE);
     }
   };
-  display_ops.draw_fn = [](const std::string_view str) {
+  display_ops.draw_fn_ = [](const std::string_view str) {
     printw("%.*s", int(str.length()), str.data());
   };
-  display_ops.draw_at_fn =
+  display_ops.draw_at_fn_ =
     [](const int x, const int y, const std::string_view str) {
       mvprintw(y, x, "%.*s", int(str.length()), str.data());
     };

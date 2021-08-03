@@ -474,7 +474,8 @@ namespace hy {
         flattened_handles_.begin() + *selected_index() + expanded_count);
 
       selected_ = std::min((int)flattened_handles_.size() - 1, *selected_);
-      offset_ = std::min(std::max((int)flattened_handles_.size() - 1, 0), offset_);
+      offset_ =
+        std::min(std::max((int)flattened_handles_.size() - 1, 0), offset_);
     }
 
     // todo - need to also remove from collapsed
@@ -621,7 +622,7 @@ namespace hy {
             .value_or(false);
         if (draw) {
           for (int r = 0; r < view.count(); r++) {
-            display_ops.draw_at_fn(i * 4, r, "\xE2\x94\x82");
+            display_ops.draw_at_fn_(i * 4, r, display_ops.connection_);
           }
         }
       }
@@ -630,8 +631,8 @@ namespace hy {
     assert(ends.size() == std::min(min_handles, view.count()));
 
     for (const auto& connection : connections) {
-      display_ops.draw_at_fn(
-        connection.first * 4, connection.second, "\xE2\x94\x82");
+      display_ops.draw_at_fn_(
+        connection.first * 4, connection.second, display_ops.connection_);
     }
 
     const int count = std::min(
@@ -640,23 +641,22 @@ namespace hy {
          ++handle_index) {
       const auto& flattened_handle = view.flattened_handles()[handle_index];
 
-      display_ops.draw_at_fn(
+      display_ops.draw_at_fn_(
         flattened_handle.indent_ * 4, handle_index - view.offset(),
-        ends[handle_index - view.offset()]
-          ? "\xE2\x94\x94\xE2\x94\x80\xE2\x94\x80 "
-          : "\xE2\x94\x9C\xE2\x94\x80\xE2\x94\x80 ");
+        ends[handle_index - view.offset()] ? display_ops.end_
+                                           : display_ops.mid_);
 
       if (handle_index == view.selected_index()) {
-        display_ops.set_invert_fn(true);
+        display_ops.set_invert_fn_(true);
       }
       if (collapser.collapsed(flattened_handle.entity_handle_)) {
-        display_ops.set_bold_fn(true);
+        display_ops.set_bold_fn_(true);
       }
       entities.call(flattened_handle.entity_handle_, [&](const auto& entity) {
-        display_ops.draw_fn(entity.name_);
+        display_ops.draw_fn_(entity.name_);
       });
-      display_ops.set_invert_fn(false);
-      display_ops.set_bold_fn(false);
+      display_ops.set_invert_fn_(false);
+      display_ops.set_bold_fn_(false);
     }
   }
 } // namespace hy

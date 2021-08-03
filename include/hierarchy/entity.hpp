@@ -143,10 +143,14 @@ namespace hy {
   };
 
   struct display_ops_t {
-    std::function<void(bool)> set_bold_fn;
-    std::function<void(bool)> set_invert_fn;
-    std::function<void(int, int, std::string_view)> draw_at_fn;
-    std::function<void(std::string_view)> draw_fn;
+    std::function<void(bool)> set_bold_fn_;
+    std::function<void(bool)> set_invert_fn_;
+    std::function<void(int, int, std::string_view)> draw_at_fn_;
+    std::function<void(std::string_view)> draw_fn_;
+
+    std::string connection_;
+    std::string end_;
+    std::string mid_;
   };
 
   void display_scrollable_hierarchy(

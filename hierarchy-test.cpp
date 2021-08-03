@@ -3,6 +3,9 @@
 
 #include "hierarchy/entity.hpp"
 
+#include <unordered_map>
+#include <utility>
+
 namespace thh {
   doctest::String toString(const thh::handle_t& handle) {
     return doctest::String("handle{") + doctest::toString(handle.id_)
@@ -204,17 +207,6 @@ TEST_CASE("Hierarchy Traversal") {
   }
 }
 
-// hy::display_ops_t display_ops;
-// display_ops.set_bold_fn = [](const bool bold) {
-// };
-// display_ops.set_invert_fn = [](const bool invert) {
-// };
-// display_ops.draw_fn = [](const std::string_view str) {
-// };
-// display_ops.draw_at_fn =
-//   [](const int x, const int y, const std::string_view str) {
-//   };
-
 TEST_CASE("Scrollable Hierarchy Traversal") {
   thh::container_t<hy::entity_t> entities;
 
@@ -367,5 +359,78 @@ TEST_CASE("Scrollable Hierarchy Traversal") {
       CHECK(added_child->flattened_handle_.indent_ == i + 1);
       view.move_down();
     }
+  }
+}
+
+template<class T>
+inline void hash_combine(std::size_t& seed, const T& v) {
+  std::hash<T> hasher;
+  seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+}
+
+struct pair_hash {
+  template<class T1, class T2>
+  std::size_t operator()(const std::pair<T1, T2>& pair) const {
+    size_t seed = 0;
+    hash_combine(seed, pair.first);
+    hash_combine(seed, pair.second);
+    return seed;
+  }
+};
+
+TEST_CASE("Scrollable Hierarchy Display") {
+  bool bolded = false;
+  bool inverted = false;
+  int last_x = 0;
+  int last_y = 0;
+  std::unordered_map<std::pair<int, int>, std::string, pair_hash> values;
+
+  hy::display_ops_t display_ops;
+  display_ops.connection_ = "|";
+  display_ops.end_ = "L";
+  display_ops.mid_ = "-";
+  display_ops.set_bold_fn_ = [&bolded](const bool bold) { bolded = bold; };
+  display_ops.set_invert_fn_ = [&inverted](const bool invert) {
+    inverted = invert;
+  };
+  display_ops.draw_fn_ = [&values, &last_x,
+                          &last_y](const std::string_view str) {
+    values[std::pair(last_x, last_y)] = str;
+    last_x += str.size();
+  };
+  display_ops.draw_at_fn_ =
+    [&values, &last_x,
+     &last_y](const int x, const int y, const std::string_view str) {
+      values[std::pair(x, y)] = str;
+      last_x = x + str.size();
+      last_y = y;
+    };
+
+  thh::container_t<hy::entity_t> entities;
+
+  const auto handle = entities.add();
+  entities.call(handle, [handle](auto& entity) {
+    entity.name_ = std::string("entity_") + std::to_string(handle.id_);
+  });
+
+  hy::collapser_t collapser;
+  std::vector<thh::handle_t> root_handles(1, handle);
+
+  hy::view_t view(
+    hy::flatten_entities(entities, collapser, root_handles), 0, 10);
+
+  SUBCASE("first handle drawn with end when size is one") {
+    hy::display_scrollable_hierarchy(
+      entities, root_handles, view, collapser, display_ops);
+    CHECK(values[std::pair(0, 0)] == display_ops.end_);
+  }
+
+  SUBCASE("first handle drawn with mid second handle drawn with end when size "
+          "is two") {
+    view.add_sibling(entities, collapser, root_handles);
+    hy::display_scrollable_hierarchy(
+      entities, root_handles, view, collapser, display_ops);
+    CHECK(values[std::pair(0, 0)] == display_ops.mid_);
+    CHECK(values[std::pair(0, 1)] == display_ops.end_);
   }
 }
