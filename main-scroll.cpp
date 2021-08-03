@@ -57,7 +57,7 @@ int main(int argc, char** argv) {
     };
 
   hy::view_t view(
-    hy::flatten_entities(entities, collapser, root_handles), 0, 20);
+    hy::flatten_entities(entities, collapser, root_handles), 0, 10);
 
   for (bool running = true; running;) {
     clear();

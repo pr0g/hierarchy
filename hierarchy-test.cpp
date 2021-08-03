@@ -256,20 +256,20 @@ TEST_CASE("Scrollable Hierarchy Traversal") {
   }
 
   SUBCASE(
-    "offset updated to show last handle if all handles are deleted offscree") {
-      for (int i = 0; i < 10; ++i) {
-        view.add_sibling(entities, collapser, root_handles);
-      }
-      for (int i = 0; i < 10; ++i) {
-        view.move_down();
-      }
-      CHECK(view.offset() == 1);
-      for (int i = 0; i < 10; ++i) {
-        view.remove(entities, collapser, root_handles);
-      }
-      // should have moved offset back to 0 to show last remaining handle
-      CHECK(view.offset() == 0);
+    "offset updated to show last handle if all handles are deleted offscreen") {
+    for (int i = 0; i < 10; ++i) {
+      view.add_sibling(entities, collapser, root_handles);
     }
+    for (int i = 0; i < 10; ++i) {
+      view.move_down();
+    }
+    CHECK(view.offset() == 1);
+    for (int i = 0; i < 10; ++i) {
+      view.remove(entities, collapser, root_handles);
+    }
+    // should have moved offset back to 0 to show last remaining handle
+    CHECK(view.offset() == 0);
+  }
 
   SUBCASE("single entity is selected entity") {
     CHECK(view.selected_index() == 0);
@@ -331,6 +331,41 @@ TEST_CASE("Scrollable Hierarchy Traversal") {
         CHECK(added_again.index_ == 3);
         CHECK(added_again.flattened_handle_.indent_ == 0);
       }
+    }
+  }
+
+  SUBCASE("flattened handles resized after collapse") {
+    for (int i = 0; i < 10; ++i) {
+      view.add_child(entities, collapser);
+    }
+    CHECK(view.flattened_handles().size() == 11);
+    view.collapse(entities, collapser);
+    CHECK(view.flattened_handles().size() == 1);
+
+    SUBCASE("flattened handles resized after expand") {
+      view.expand(entities, collapser);
+      CHECK(view.flattened_handles().size() == 11);
+
+      SUBCASE("sibling added at correct offset when children expanded") {
+        auto position = view.add_sibling(entities, collapser, root_handles);
+        CHECK(position.index_ == 11);
+        CHECK(position.flattened_handle_.entity_handle_.id_ == 11);
+
+        SUBCASE("sibling offset updated when children collapsed") {
+          view.collapse(entities, collapser);
+          view.move_down();
+          CHECK(view.selected_handle().id_ == 11);
+          CHECK(view.selected_index() == 1);
+        }
+      }
+    }
+  }
+
+  SUBCASE("child indents increase as hierarchy depth grows") {
+    for (int i = 0; i < 5; ++i) {
+      auto added_child = view.add_child(entities, collapser);
+      CHECK(added_child->flattened_handle_.indent_ == i + 1);
+      view.move_down();
     }
   }
 }
