@@ -37,6 +37,7 @@ int main(int argc, char** argv) {
   display_ops.connection_ = "\xE2\x94\x82";
   display_ops.end_ = "\xE2\x94\x94\xE2\x94\x80\xE2\x94\x80 ";
   display_ops.mid_ = "\xE2\x94\x9C\xE2\x94\x80\xE2\x94\x80 ";
+  display_ops.indent_width_ = 4;
 
   display_ops.set_bold_fn_ = [](const bool bold) {
     if (bold) {

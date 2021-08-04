@@ -622,7 +622,8 @@ namespace hy {
             .value_or(false);
         if (draw) {
           for (int r = 0; r < view.count(); r++) {
-            display_ops.draw_at_fn_(i * 4, r, display_ops.connection_);
+            display_ops.draw_at_fn_(
+              i * display_ops.indent_width_, r, display_ops.connection_);
           }
         }
       }
@@ -632,7 +633,8 @@ namespace hy {
 
     for (const auto& connection : connections) {
       display_ops.draw_at_fn_(
-        connection.first * 4, connection.second, display_ops.connection_);
+        connection.first * display_ops.indent_width_, connection.second,
+        display_ops.connection_);
     }
 
     const int count = std::min(
@@ -642,7 +644,8 @@ namespace hy {
       const auto& flattened_handle = view.flattened_handles()[handle_index];
 
       display_ops.draw_at_fn_(
-        flattened_handle.indent_ * 4, handle_index - view.offset(),
+        flattened_handle.indent_ * display_ops.indent_width_,
+        handle_index - view.offset(),
         ends[handle_index - view.offset()] ? display_ops.end_
                                            : display_ops.mid_);
 

@@ -151,6 +151,7 @@ namespace hy {
     std::string connection_;
     std::string end_;
     std::string mid_;
+    int indent_width_ = 1;
   };
 
   void display_scrollable_hierarchy(

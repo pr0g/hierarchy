@@ -389,6 +389,8 @@ TEST_CASE("Scrollable Hierarchy Display") {
   display_ops.connection_ = "|";
   display_ops.end_ = "L";
   display_ops.mid_ = "-";
+  display_ops.indent_width_ = 1;
+
   display_ops.set_bold_fn_ = [&bolded](const bool bold) { bolded = bold; };
   display_ops.set_invert_fn_ = [&inverted](const bool invert) {
     inverted = invert;
@@ -432,5 +434,15 @@ TEST_CASE("Scrollable Hierarchy Display") {
       entities, root_handles, view, collapser, display_ops);
     CHECK(values[std::pair(0, 0)] == display_ops.mid_);
     CHECK(values[std::pair(0, 1)] == display_ops.end_);
+  }
+
+  SUBCASE("third handle drawn with end when child of first handle") {
+    view.add_sibling(entities, collapser, root_handles);
+    view.add_child(entities, collapser);
+    hy::display_scrollable_hierarchy(
+      entities, root_handles, view, collapser, display_ops);
+    CHECK(values[std::pair(0, 0)] == display_ops.mid_);
+    CHECK(values[std::pair(0, 2)] == display_ops.end_);
+    CHECK(values[std::pair(1, 1)] == display_ops.end_);
   }
 }
