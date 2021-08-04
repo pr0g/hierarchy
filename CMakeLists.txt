@@ -5,7 +5,7 @@ include(FetchContent)
 FetchContent_Declare(
   thh_handles
   GIT_REPOSITORY https://github.com/pr0g/cpp-handle-container.git
-  GIT_TAG de5dfa1234d81f0054d02347567d5bf949531be5)
+  GIT_TAG 8b500f8ade7d98fa0bb58e94701b552731ed4d0e)
 FetchContent_MakeAvailable(thh_handles)
 
 add_library(${PROJECT_NAME})

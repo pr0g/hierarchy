@@ -240,7 +240,7 @@ TEST_CASE("Scrollable Hierarchy Traversal") {
     view.remove(entities, collapser, root_handles);
     CHECK(view.flattened_handles().empty());
     CHECK(root_handles.empty());
-    CHECK(entities.size() == 0);
+    CHECK(entities.empty());
 
     SUBCASE("no entities gives empty selection") {
       CHECK(view.selected_handle() == thh::handle_t());
