@@ -14,6 +14,13 @@ void repeat_n(size_t n, Fn&& fn) {
   }
 }
 
+template<typename Fn>
+void repeat_n_it(size_t n, Fn&& fn) {
+  while (n--) {
+    fn(n);
+  }
+}
+
 namespace thh {
   doctest::String toString(const thh::handle_t& handle) {
     return doctest::String("handle{") + doctest::toString(handle.id_)
@@ -459,5 +466,44 @@ TEST_CASE("Scrollable Hierarchy Display") {
     hy::display_scrollable_hierarchy(
       entities, root_handles, view, collapser, display_ops);
     CHECK(values[std::pair(0, 9)] == display_ops.end_);
+  }
+
+  SUBCASE("linking connection displayed between siblings, first with child") {
+    view.add_sibling(entities, collapser, root_handles);
+    view.add_child(entities, collapser);
+    hy::display_scrollable_hierarchy(
+      entities, root_handles, view, collapser, display_ops);
+    CHECK(values[std::pair(0, 1)] == display_ops.connection_);
+  }
+
+  SUBCASE("linking connection expanded between siblings as children added") {
+    view.add_sibling(entities, collapser, root_handles);
+    view.add_child(entities, collapser);
+    view.move_down();
+    repeat_n(2, [&] { view.add_sibling(entities, collapser, root_handles); });
+    hy::display_scrollable_hierarchy(
+      entities, root_handles, view, collapser, display_ops);
+    CHECK(values[std::pair(0, 1)] == display_ops.connection_);
+    CHECK(values[std::pair(0, 2)] == display_ops.connection_);
+    CHECK(values[std::pair(0, 3)] == display_ops.connection_);
+  }
+
+  SUBCASE("linking connection repeated at each level as children added") {
+    repeat_n(3, [&] {
+      view.add_sibling(entities, collapser, root_handles);
+      view.add_child(entities, collapser);
+      view.move_down();
+    });
+    hy::display_scrollable_hierarchy(
+      entities, root_handles, view, collapser, display_ops);
+    repeat_n_it(5, [&](size_t i) {
+      int offset = 1;
+      CHECK(values[std::pair(0, i + offset)] == display_ops.connection_);
+    });
+    repeat_n_it(3, [&](size_t i) {
+      int offset = 2;
+      CHECK(values[std::pair(1, i + offset)] == display_ops.connection_);
+    });
+    CHECK(values[std::pair(2, 3)] == display_ops.connection_);
   }
 }
