@@ -6,6 +6,14 @@
 #include <unordered_map>
 #include <utility>
 
+// helper function to reduce boilerplate
+template<typename Fn>
+void repeat_n(size_t n, Fn&& fn) {
+  while (n--) {
+    fn();
+  }
+}
+
 namespace thh {
   doctest::String toString(const thh::handle_t& handle) {
     return doctest::String("handle{") + doctest::toString(handle.id_)
@@ -249,16 +257,10 @@ TEST_CASE("Scrollable Hierarchy Traversal") {
 
   SUBCASE(
     "offset updated to show last handle if all handles are deleted offscreen") {
-    for (int i = 0; i < 10; ++i) {
-      view.add_sibling(entities, collapser, root_handles);
-    }
-    for (int i = 0; i < 10; ++i) {
-      view.move_down();
-    }
+    repeat_n(10, [&] { view.add_sibling(entities, collapser, root_handles); });
+    repeat_n(10, [&] { view.move_down(); });
     CHECK(view.offset() == 1);
-    for (int i = 0; i < 10; ++i) {
-      view.remove(entities, collapser, root_handles);
-    }
+    repeat_n(10, [&] { view.remove(entities, collapser, root_handles); });
     // should have moved offset back to 0 to show last remaining handle
     CHECK(view.offset() == 0);
   }
@@ -327,9 +329,7 @@ TEST_CASE("Scrollable Hierarchy Traversal") {
   }
 
   SUBCASE("flattened handles resized after collapse") {
-    for (int i = 0; i < 10; ++i) {
-      view.add_child(entities, collapser);
-    }
+    repeat_n(10, [&] { view.add_child(entities, collapser); });
     CHECK(view.flattened_handles().size() == 11);
     view.collapse(entities, collapser);
     CHECK(view.flattened_handles().size() == 1);
@@ -444,5 +444,20 @@ TEST_CASE("Scrollable Hierarchy Display") {
     CHECK(values[std::pair(0, 0)] == display_ops.mid_);
     CHECK(values[std::pair(0, 2)] == display_ops.end_);
     CHECK(values[std::pair(1, 1)] == display_ops.end_);
+  }
+
+  SUBCASE("last visible handle not drawn with end when sibling offscreen") {
+    repeat_n(10, [&] { view.add_sibling(entities, collapser, root_handles); });
+    hy::display_scrollable_hierarchy(
+      entities, root_handles, view, collapser, display_ops);
+    CHECK(values[std::pair(0, 9)] == display_ops.mid_);
+  }
+
+  SUBCASE("last visible handle drawn with end when scrolled into view") {
+    repeat_n(10, [&] { view.add_sibling(entities, collapser, root_handles); });
+    repeat_n(10, [&] { view.move_down(); });
+    hy::display_scrollable_hierarchy(
+      entities, root_handles, view, collapser, display_ops);
+    CHECK(values[std::pair(0, 9)] == display_ops.end_);
   }
 }
