@@ -404,13 +404,15 @@ TEST_CASE("Scrollable Hierarchy Display") {
   };
   display_ops.draw_fn_ = [&values, &last_x,
                           &last_y](const std::string_view str) {
-    values[std::pair(last_x, last_y)] = str;
+    auto inserted = values.insert({std::pair(last_x, last_y), std::string(str)});
+    CHECK(inserted.second);
     last_x += str.size();
   };
   display_ops.draw_at_fn_ =
     [&values, &last_x,
      &last_y](const int x, const int y, const std::string_view str) {
-      values[std::pair(x, y)] = str;
+      auto inserted = values.insert({std::pair(x, y), std::string(str)});
+      CHECK(inserted.second);
       last_x = x + str.size();
       last_y = y;
     };
