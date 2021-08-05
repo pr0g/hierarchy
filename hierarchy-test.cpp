@@ -497,13 +497,108 @@ TEST_CASE("Scrollable Hierarchy Display") {
     hy::display_scrollable_hierarchy(
       entities, root_handles, view, collapser, display_ops);
     repeat_n_it(5, [&](size_t i) {
-      int offset = 1;
+      const int offset = 1;
       CHECK(values[std::pair(0, i + offset)] == display_ops.connection_);
     });
     repeat_n_it(3, [&](size_t i) {
-      int offset = 2;
+      const int offset = 2;
       CHECK(values[std::pair(1, i + offset)] == display_ops.connection_);
     });
     CHECK(values[std::pair(2, 3)] == display_ops.connection_);
+  }
+
+  SUBCASE("linking connection present for sibling offscreen below") {
+    repeat_n(9, [&] { view.add_child(entities, collapser); });
+    view.add_sibling(entities, collapser, root_handles);
+    hy::display_scrollable_hierarchy(
+      entities, root_handles, view, collapser, display_ops);
+    repeat_n_it(9, [&](size_t i) {
+      const int offset = 1;
+      CHECK(values[std::pair(0, i + offset)] == display_ops.connection_);
+    });
+  }
+
+  SUBCASE(
+    "linking connection present for sibling offscreen below with offset") {
+    repeat_n(9, [&] { view.add_child(entities, collapser); });
+    view.add_sibling(entities, collapser, root_handles);
+    repeat_n(10, [&] { view.move_down(); });
+    repeat_n(9, [&] { view.add_child(entities, collapser); });
+    view.add_sibling(entities, collapser, root_handles);
+    repeat_n(9, [&] { view.move_down(); });
+    hy::display_scrollable_hierarchy(
+      entities, root_handles, view, collapser, display_ops);
+    repeat_n_it(9, [&](size_t i) {
+      const int offset = 1;
+      CHECK(values[std::pair(0, i + offset)] == display_ops.connection_);
+    });
+  }
+
+  SUBCASE(
+    "linking connection present for sibling offscreen above with offset") {
+    repeat_n(9, [&] { view.add_child(entities, collapser); });
+    view.add_sibling(entities, collapser, root_handles);
+    repeat_n(10, [&] { view.move_down(); });
+    repeat_n(9, [&] { view.add_child(entities, collapser); });
+    view.add_sibling(entities, collapser, root_handles);
+    repeat_n(10, [&] { view.move_down(); });
+    hy::display_scrollable_hierarchy(
+      entities, root_handles, view, collapser, display_ops);
+    repeat_n_it(9, [&](size_t i) {
+      CHECK(values[std::pair(0, i)] == display_ops.connection_);
+    });
+  }
+
+  SUBCASE("linking connection present for sibling offscreen below with offset "
+          "and indent") {
+    repeat_n(9, [&] { view.add_child(entities, collapser); });
+    view.add_sibling(entities, collapser, root_handles);
+    repeat_n(9, [&] { view.move_down(); });
+    repeat_n(9, [&] { view.add_child(entities, collapser); });
+    view.add_sibling(entities, collapser, root_handles);
+    repeat_n(9, [&] { view.move_down(); });
+    hy::display_scrollable_hierarchy(
+      entities, root_handles, view, collapser, display_ops);
+    repeat_n_it(9, [&](size_t i) {
+      const int offset = 1;
+      CHECK(values[std::pair(1, i + offset)] == display_ops.connection_);
+    });
+  }
+
+  SUBCASE("linking connections drawn for offscreen handles") {
+    repeat_n(10, [&] { view.add_child(entities, collapser); });
+    view.add_sibling(entities, collapser, root_handles);
+    repeat_n(10, [&] { view.move_down(); });
+    hy::display_scrollable_hierarchy(
+      entities, root_handles, view, collapser, display_ops);
+    repeat_n_it(9, [&](size_t i) {
+      CHECK(values[std::pair(0, i)] == display_ops.connection_);
+    });
+  }
+
+  // create a 'triangle shape' hierarchy, see top half, then move down (scroll)
+  // to see bottom half
+  SUBCASE("all types of linking connections drawn for handles") {
+    repeat_n(9, [&] {
+      view.add_sibling(entities, collapser, root_handles);
+      view.add_child(entities, collapser);
+      view.move_down();
+    });
+    hy::display_scrollable_hierarchy(
+      entities, root_handles, view, collapser, display_ops);
+    for (int c = 0, s = 1; c < 9; ++c, ++s) {
+      for (int r = s; r < 9; r++) {
+        CHECK(values[std::pair(c, r)] == display_ops.connection_);
+      }
+    }
+    repeat_n(9, [&] { view.move_down(); });
+    values.clear();
+    hy::display_scrollable_hierarchy(
+      entities, root_handles, view, collapser, display_ops);
+    for (int c = 0, e = 9; c < 9; ++c, --e) {
+      for (int r = 0; r < e; r++) {
+        CHECK(values[std::pair(c, r)] == display_ops.connection_);
+      }
+    }
   }
 }
