@@ -432,6 +432,7 @@ TEST_CASE("Scrollable Hierarchy Display") {
     hy::display_scrollable_hierarchy(
       entities, root_handles, view, collapser, display_ops);
     CHECK(values[std::pair(0, 0)] == display_ops.end_);
+    CHECK(values.size() == 2);
   }
 
   SUBCASE("first handle drawn with mid second handle drawn with end when size "
@@ -600,5 +601,25 @@ TEST_CASE("Scrollable Hierarchy Display") {
         CHECK(values[std::pair(c, r)] == display_ops.connection_);
       }
     }
+  }
+
+  SUBCASE("ensure certain linking connections are not drawn") {
+    view.add_sibling(entities, collapser, root_handles);
+    repeat_n(2, [&] { view.add_child(entities, collapser); });
+    repeat_n(2, [&] { view.move_down(); });
+    repeat_n(3, [&] { view.add_child(entities, collapser); });
+    repeat_n(2, [&] { view.move_down(); });
+    view.add_child(entities, collapser);
+    repeat_n(3, [&] { view.move_down(); });
+    repeat_n(2, [&] { view.add_child(entities, collapser); });
+    hy::display_scrollable_hierarchy(
+      entities, root_handles, view, collapser, display_ops);
+    repeat_n_it(4, [&](size_t i) {
+      CHECK(values.find(std::pair(1, i + 3)) == values.end());
+    });
+    repeat_n_it(2, [&](size_t i) {
+      CHECK(values.find(std::pair(0, i + 8)) == values.end());
+    });
+    CHECK(values.size() == 27);
   }
 }
