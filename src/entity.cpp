@@ -568,7 +568,7 @@ namespace hy {
       // draw all lines for entities that are offscreen
       for (int indent_index = min_indent - 1; indent_index >= 0;
            --indent_index) {
-        bool draw =
+        const bool draw =
           entities
             .call_return(
               min_indent_handle,
@@ -632,13 +632,11 @@ namespace hy {
     for (int handle_index = view.offset(); handle_index < count;
          ++handle_index) {
       const auto& flattened_handle = view.flattened_handles()[handle_index];
-
       display_ops.draw_at_fn_(
         flattened_handle.indent_ * display_ops.indent_width_,
         handle_index - view.offset(),
         ends[handle_index - view.offset()] ? display_ops.end_
                                            : display_ops.mid_);
-
       if (handle_index == view.selected_index()) {
         display_ops.set_invert_fn_(true);
       }
