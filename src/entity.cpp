@@ -495,7 +495,6 @@ namespace hy {
     // find another matching indent before a lower indent is found
     std::vector<bool> ends;
     ends.reserve(std::min(min_visible_handles, view.count()));
-    // search 'upwards' first (reverse iterators)
     for (int row_index = 0; row_index < min_visible_handles; ++row_index) {
       const int handle_index =
         std::min(row_index + view.offset(), total_handles);
@@ -504,6 +503,7 @@ namespace hy {
         min_indent_handle =
           view.flattened_handles()[handle_index].entity_handle_;
       }
+      // search 'upwards' first (reverse iterators)
       const int prev_row_index = row_index - 1;
       const int prev_handle_index =
         (total_handles - 1) - (view.offset() + prev_row_index);
@@ -515,8 +515,7 @@ namespace hy {
                   == flattened_handle.indent_;
             });
           found != view.flattened_handles().rend()) {
-        auto ffound = (found + 1).base();
-        auto dist = ffound - view.flattened_handles().begin();
+        const auto dist = (found + 1).base() - view.flattened_handles().begin();
         if (dist < view.offset()) {
           if (std::all_of(
                 view.flattened_handles().rbegin() + prev_handle_index, found,
@@ -524,15 +523,9 @@ namespace hy {
                   return flattened_handle.indent_
                       >= view.flattened_handles()[handle_index].indent_;
                 })) {
-            const int range =
-              found - (view.flattened_handles().rbegin() + prev_handle_index);
-            for (int i = 0; i < range; i++) {
-              int is = prev_row_index - i;
-              if (is < 0) {
-                break;
-              }
+            for (int i = prev_row_index; i >= 0; i--) {
               connections.push_back(
-                {view.flattened_handles()[handle_index].indent_, is});
+                {view.flattened_handles()[handle_index].indent_, i});
             }
           }
         }
@@ -556,16 +549,10 @@ namespace hy {
               })) {
           const int range =
             found - (view.flattened_handles().begin() + next_handle_index);
-          for (int i = 0; i < range; i++) {
-            int is = next_row_index + i;
-            int min = std::min(
-              view.count(),
-              (int)view.flattened_handles().size() - view.offset());
-            if (is >= min) {
-              break;
-            }
+          for (int i = next_row_index;
+               i < std::min(next_row_index + range, view.count()); i++) {
             connections.push_back(
-              {view.flattened_handles()[handle_index].indent_, is});
+              {view.flattened_handles()[handle_index].indent_, i});
           }
           ends.push_back(false);
         } else {
@@ -579,7 +566,8 @@ namespace hy {
     // can not be set if handles are empty
     if (min_indent != std::numeric_limits<int>::max()) {
       // draw all lines for entities that are offscreen
-      for (int i = min_indent - 1; i >= 0; --i) {
+      for (int indent_index = min_indent - 1; indent_index >= 0;
+           --indent_index) {
         bool draw =
           entities
             .call_return(
@@ -622,9 +610,10 @@ namespace hy {
               })
             .value_or(false);
         if (draw) {
-          for (int r = 0; r < view.count(); r++) {
+          for (int row = 0; row < view.count(); row++) {
             display_ops.draw_at_fn_(
-              i * display_ops.indent_width_, r, display_ops.connection_);
+              indent_index * display_ops.indent_width_, row,
+              display_ops.connection_);
           }
         }
       }

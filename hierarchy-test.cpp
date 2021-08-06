@@ -625,4 +625,16 @@ TEST_CASE("Scrollable Hierarchy Display") {
     });
     CHECK(values.size() == 27);
   }
+
+  SUBCASE(
+    "ensure next sibling linking connections are not drawn out of bounds") {
+    view.add_sibling(entities, collapser, root_handles);
+    repeat_n(15, [&] { view.add_child(entities, collapser); });
+    hy::display_scrollable_hierarchy(
+      entities, root_handles, view, collapser, display_ops);
+    repeat_n_it(5, [&](size_t i) {
+      const int offset = 10;
+      CHECK(values.find(std::pair(0, offset + i)) == values.end());
+    });
+  }
 }
