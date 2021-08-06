@@ -9,15 +9,15 @@
 // helper function to reduce boilerplate
 template<typename Fn>
 void repeat_n(size_t n, Fn&& fn) {
-  while (n--) {
+  for (size_t i = 0; i < n; i++) {
     fn();
   }
 }
 
 template<typename Fn>
 void repeat_n_it(size_t n, Fn&& fn) {
-  while (n--) {
-    fn(n);
+  for (size_t i = 0; i < n; i++) {
+    fn(i);
   }
 }
 
@@ -404,7 +404,8 @@ TEST_CASE("Scrollable Hierarchy Display") {
   };
   display_ops.draw_fn_ = [&values, &last_x,
                           &last_y](const std::string_view str) {
-    auto inserted = values.insert({std::pair(last_x, last_y), std::string(str)});
+    auto inserted =
+      values.insert({std::pair(last_x, last_y), std::string(str)});
     CHECK(inserted.second);
     last_x += str.size();
   };
