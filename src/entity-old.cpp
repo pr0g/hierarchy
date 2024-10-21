@@ -14,13 +14,13 @@ namespace hy {
 
   void interaction_t::collapse(
     const thh::handle_t entity_handle,
-    const thh::container_t<hy::entity_t>& entities) {
+    const thh::handle_vector_t<hy::entity_t>& entities) {
     collapser_.collapse(entity_handle, entities);
   }
 
   void interaction_t::select(
     const thh::handle_t entity_handle,
-    const thh::container_t<entity_t>& entities,
+    const thh::handle_vector_t<entity_t>& entities,
     const std::vector<thh::handle_t>& root_handles) {
     if (entity_handle != thh::handle_t()) {
       selected_ = entity_handle;
@@ -39,7 +39,7 @@ namespace hy {
   }
 
   void interaction_t::move_up(
-    const thh::container_t<hy::entity_t>& entities,
+    const thh::handle_vector_t<hy::entity_t>& entities,
     const std::vector<thh::handle_t>& root_handles) {
     if (const auto location = element(); location != 0) {
       auto next_root = siblings_[location - 1];
@@ -67,7 +67,7 @@ namespace hy {
   }
 
   void interaction_t::move_down(
-    const thh::container_t<hy::entity_t>& entities,
+    const thh::handle_vector_t<hy::entity_t>& entities,
     const std::vector<thh::handle_t>& root_handles) {
     const auto next_sibling = [&]() {
       if (const int next_element = element() + 1;
@@ -128,7 +128,7 @@ namespace hy {
   }
 
   void display_hierarchy(
-    const thh::container_t<hy::entity_t>& entities,
+    const thh::handle_vector_t<hy::entity_t>& entities,
     const interaction_t& interaction,
     const std::vector<thh::handle_t>& root_handles, const display_fn& display,
     const scope_exit_fn& scope_exit,
@@ -209,7 +209,7 @@ namespace hy {
 
 namespace demo {
   void process_input(
-    const input_e input, thh::container_t<hy::entity_t>& entities,
+    const input_e input, thh::handle_vector_t<hy::entity_t>& entities,
     const std::vector<thh::handle_t>& root_handles,
     hy::interaction_t& interaction) {
     switch (input) {

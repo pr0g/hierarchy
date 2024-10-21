@@ -6,7 +6,7 @@
 namespace hy {
   bool has_children(
     const thh::handle_t handle,
-    const thh::container_t<hy::entity_t>& entities) {
+    const thh::handle_vector_t<hy::entity_t>& entities) {
     return entities
       .call_return(
         handle, [&](const auto& entity) { return !entity.children_.empty(); })
@@ -15,7 +15,7 @@ namespace hy {
 
   std::vector<thh::handle_t> siblings(
     const thh::handle_t entity_handle,
-    const thh::container_t<entity_t>& entities,
+    const thh::handle_vector_t<entity_t>& entities,
     const std::vector<thh::handle_t>& root_handles) {
     return entities
       .call_return(
@@ -33,7 +33,7 @@ namespace hy {
   void add_children(
     const thh::handle_t entity_handle,
     const std::vector<thh::handle_t>& child_handles,
-    thh::container_t<entity_t>& entities) {
+    thh::handle_vector_t<entity_t>& entities) {
     entities.call(entity_handle, [&child_handles](auto& entity) {
       entity.children_.insert(
         entity.children_.end(), child_handles.begin(), child_handles.end());
@@ -66,7 +66,7 @@ namespace hy {
 
   void collapser_t::collapse(
     const thh::handle_t entity_handle,
-    const thh::container_t<hy::entity_t>& entities) {
+    const thh::handle_vector_t<hy::entity_t>& entities) {
     if (!collapsed(entity_handle) && has_children(entity_handle, entities)) {
       collapsed_.push_back(entity_handle);
     }
@@ -74,7 +74,7 @@ namespace hy {
 
   int expanded_count(
     const thh::handle_t& entity_handle,
-    const thh::container_t<hy::entity_t>& entities,
+    const thh::handle_vector_t<hy::entity_t>& entities,
     const collapser_t& collapser) {
     std::vector<thh::handle_t> handles(1, entity_handle);
     int count = 1;
@@ -94,7 +94,7 @@ namespace hy {
 
   std::vector<flattened_handle_t> flatten_entity(
     const thh::handle_t entity_handle, const int indent,
-    const thh::container_t<hy::entity_t>& entities,
+    const thh::handle_vector_t<hy::entity_t>& entities,
     const collapser_t& collapser) {
     std::vector<flattened_handle_t> flattened;
     std::deque<indent_tracker_t> indent_tracker(1, {indent, 1});
@@ -127,7 +127,7 @@ namespace hy {
 
   std::vector<thh::handle_t> entity_and_descendants(
     thh::handle_t entity_handle,
-    const thh::container_t<hy::entity_t>& entities) {
+    const thh::handle_vector_t<hy::entity_t>& entities) {
     std::vector<thh::handle_t> all_handles;
     std::vector<thh::handle_t> handles(1, entity_handle);
     while (!handles.empty()) {
@@ -145,7 +145,7 @@ namespace hy {
   }
 
   std::vector<flattened_handle_t> flatten_entities(
-    const thh::container_t<hy::entity_t>& entities,
+    const thh::handle_vector_t<hy::entity_t>& entities,
     const collapser_t& collapser,
     const std::vector<thh::handle_t>& root_handles) {
     std::vector<flattened_handle_t> flattened;
@@ -166,7 +166,7 @@ namespace hy {
 
   thh::handle_t collapsed_parent_handle(
     const thh::handle_t entity_handle,
-    const thh::container_t<hy::entity_t>& entities, collapser_t& collapser) {
+    const thh::handle_vector_t<hy::entity_t>& entities, collapser_t& collapser) {
     auto search_handle = entity_handle;
     auto top_handle = thh::handle_t();
     while (search_handle != thh::handle_t()) {
@@ -185,7 +185,7 @@ namespace hy {
 
   std::pair<thh::handle_t, int> root_handle(
     const thh::handle_t entity_handle,
-    const thh::container_t<hy::entity_t>& entities) {
+    const thh::handle_vector_t<hy::entity_t>& entities) {
     int depth = 0;
     auto search_handle = entity_handle;
     while (search_handle != thh::handle_t()) {
@@ -211,7 +211,7 @@ namespace hy {
 
   std::optional<int> go_to_entity(
     const thh::handle_t entity_handle,
-    const thh::container_t<hy::entity_t>& entities, collapser_t& collapser,
+    const thh::handle_vector_t<hy::entity_t>& entities, collapser_t& collapser,
     std::vector<flattened_handle_t>& flattened_handles) {
     // might not be found if collapsed
     if (auto handle_it = std::find_if(
@@ -302,7 +302,7 @@ namespace hy {
   }
 
   void view_t::collapse(
-    const thh::container_t<hy::entity_t>& entities, collapser_t& collapser) {
+    const thh::handle_vector_t<hy::entity_t>& entities, collapser_t& collapser) {
     if (const auto entity_handle = selected_handle();
         entity_handle != thh::handle_t()) {
       const int expanded_count =
@@ -315,7 +315,7 @@ namespace hy {
   }
 
   void view_t::expand(
-    const thh::container_t<hy::entity_t>& entities, collapser_t& collapser) {
+    const thh::handle_vector_t<hy::entity_t>& entities, collapser_t& collapser) {
     if (const auto entity_handle = selected_handle();
         entity_handle != thh::handle_t()) {
       if (collapser.collapsed(entity_handle)) {
@@ -330,7 +330,7 @@ namespace hy {
   }
 
   void view_t::goto_recorded_handle(
-    const thh::container_t<hy::entity_t>& entities, collapser_t& collapser) {
+    const thh::handle_vector_t<hy::entity_t>& entities, collapser_t& collapser) {
     if (recorded_handle_ != thh::handle_t()) {
       if (auto selected = hy::go_to_entity(
             recorded_handle_, entities, collapser, flattened_handles_);
@@ -346,7 +346,7 @@ namespace hy {
   void view_t::clear_recorded_handle() { recorded_handle_ = thh::handle_t(); }
 
   std::optional<flattened_handle_position_t> view_t::add_child(
-    thh::container_t<hy::entity_t>& entities, collapser_t& collapser) {
+    thh::handle_vector_t<hy::entity_t>& entities, collapser_t& collapser) {
     const auto selected = selected_handle();
     if (selected == thh::handle_t()) {
       return {};
@@ -373,7 +373,7 @@ namespace hy {
   }
 
   flattened_handle_position_t view_t::add_sibling(
-    thh::container_t<hy::entity_t>& entities, collapser_t& collapser,
+    thh::handle_vector_t<hy::entity_t>& entities, collapser_t& collapser,
     std::vector<thh::handle_t>& root_handles) {
     const auto next_handle = entities.add();
     entities.call(next_handle, [next_handle](auto& entity) {
@@ -434,7 +434,7 @@ namespace hy {
   }
 
   void view_t::remove(
-    thh::container_t<hy::entity_t>& entities, collapser_t& collapser,
+    thh::handle_vector_t<hy::entity_t>& entities, collapser_t& collapser,
     std::vector<thh::handle_t>& root_handles) {
     if (const auto handle = selected_handle(); handle != thh::handle_t()) {
       if (entities
@@ -482,7 +482,7 @@ namespace hy {
   }
 
   void display_scrollable_hierarchy(
-    const thh::container_t<hy::entity_t>& entities,
+    const thh::handle_vector_t<hy::entity_t>& entities,
     const std::vector<thh::handle_t>& root_handles, const view_t& view,
     const collapser_t& collapser, const display_ops_t& display_ops) {
     thh::handle_t min_indent_handle;
@@ -654,7 +654,7 @@ namespace hy {
 
 namespace demo {
   std::vector<thh::handle_t> create_sample_entities(
-    thh::container_t<hy::entity_t>& entities) {
+    thh::handle_vector_t<hy::entity_t>& entities) {
     using namespace std::string_literals;
     const int64_t handle_count = 12;
     std::vector<thh::handle_t> handles;
@@ -678,7 +678,7 @@ namespace demo {
   }
 
   std::vector<thh::handle_t> create_bench_entities(
-    thh::container_t<hy::entity_t>& entities, const int root_count,
+    thh::handle_vector_t<hy::entity_t>& entities, const int root_count,
     const int handle_count) {
     using namespace std::string_literals;
     std::vector<thh::handle_t> roots;

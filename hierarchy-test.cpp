@@ -42,7 +42,7 @@ namespace thh {
 } // namespace thh
 
 TEST_CASE("Hierarchy Traversal") {
-  thh::container_t<hy::entity_t> entities;
+  thh::handle_vector_t<hy::entity_t> entities;
   auto root_handles = demo::create_sample_entities(entities);
 
   hy::interaction_t interaction;
@@ -223,7 +223,7 @@ TEST_CASE("Hierarchy Traversal") {
 }
 
 TEST_CASE("Scrollable Hierarchy Traversal") {
-  thh::container_t<hy::entity_t> entities;
+  thh::handle_vector_t<hy::entity_t> entities;
 
   const auto handle = entities.add();
   entities.call(handle, [handle](auto& entity) {
@@ -418,7 +418,7 @@ TEST_CASE("Scrollable Hierarchy Display") {
       last_y = y;
     };
 
-  thh::container_t<hy::entity_t> entities;
+  thh::handle_vector_t<hy::entity_t> entities;
 
   const auto handle = entities.add();
   entities.call(handle, [handle](auto& entity) {

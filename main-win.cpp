@@ -58,7 +58,7 @@ int main(int argc, char** argv) {
     return -1;
   }
 
-  thh::container_t<hy::entity_t> entities;
+  thh::handle_vector_t<hy::entity_t> entities;
   auto root_handles = demo::create_sample_entities(entities);
 
   hy::interaction_t interaction;

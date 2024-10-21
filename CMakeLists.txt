@@ -3,10 +3,10 @@ project(hierarchy)
 
 include(FetchContent)
 FetchContent_Declare(
-  thh_handles
+  thh-handle-vector
   GIT_REPOSITORY https://github.com/pr0g/cpp-handle-container.git
-  GIT_TAG 8b500f8ade7d98fa0bb58e94701b552731ed4d0e)
-FetchContent_MakeAvailable(thh_handles)
+  GIT_TAG 8424c42ed497a3d37d9cde1c0e3f0cf440c6cf1a)
+FetchContent_MakeAvailable(thh-handle-vector)
 
 add_library(${PROJECT_NAME})
 target_sources(${PROJECT_NAME} PRIVATE src/entity.cpp src/entity-old.cpp)
@@ -14,7 +14,7 @@ target_include_directories(
   ${PROJECT_NAME}
   PUBLIC
   PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
-target_link_libraries(${PROJECT_NAME} PUBLIC thh_handles)
+target_link_libraries(${PROJECT_NAME} PUBLIC thh-handle-vector)
 
 option(HIERARCHY_DEMO "Builds simple terminal example of hierarchy" OFF)
 option(HIERARCHY_TEST "Builds unit tests for hierarchy library" OFF)
@@ -56,7 +56,7 @@ if (${HIERARCHY_TEST})
   FetchContent_Declare(
     doctest
     GIT_REPOSITORY https://github.com/onqtam/doctest.git
-    GIT_TAG f0ab4e793fa863d4a5929ff263ddd3bebec8767e)
+    GIT_TAG ae7a13539fb71f270b87eb2e874fbac80bc8dda2)
   FetchContent_MakeAvailable(doctest)
   target_link_libraries(${PROJECT_NAME}-test PRIVATE ${PROJECT_NAME} doctest)
 
@@ -75,7 +75,8 @@ endif ()
 if (${HIERARCHY_BENCH})
   set(BENCHMARK_ENABLE_TESTING OFF)
   FetchContent_Declare(benchmark
-                       GIT_REPOSITORY https://github.com/google/benchmark.git)
+                       GIT_REPOSITORY https://github.com/google/benchmark.git
+                       GIT_TAG main)
   FetchContent_MakeAvailable(benchmark)
   add_executable(${PROJECT_NAME}-bench)
   target_sources(${PROJECT_NAME}-bench PRIVATE ${PROJECT_NAME}-bench.cpp)
